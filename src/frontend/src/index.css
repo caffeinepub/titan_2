@@ -1,0 +1,79 @@
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 200 700;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.875rem;
+    /* Dark theme only */
+    --background: 0.12 0.006 264;
+    --foreground: 0.93 0.005 264;
+    --card: 0.17 0.007 264;
+    --card-foreground: 0.93 0.005 264;
+    --popover: 0.19 0.007 264;
+    --popover-foreground: 0.93 0.005 264;
+    --primary: 0.62 0.19 264;
+    --primary-foreground: 0.98 0 0;
+    --secondary: 0.22 0.008 264;
+    --secondary-foreground: 0.93 0.005 264;
+    --muted: 0.19 0.007 264;
+    --muted-foreground: 0.62 0.008 264;
+    --accent: 0.54 0.19 264;
+    --accent-foreground: 0.98 0 0;
+    --destructive: 0.62 0.22 27;
+    --destructive-foreground: 0.98 0 0;
+    --border: 0.25 0.009 264;
+    --input: 0.22 0.008 264;
+    --ring: 0.62 0.19 264;
+    --chart-1: 0.62 0.19 264;
+    --chart-2: 0.65 0.18 162;
+    --chart-3: 0.72 0.16 85;
+    --chart-4: 0.62 0.22 27;
+    --chart-5: 0.58 0.2 304;
+    --sidebar: 0.14 0.006 264;
+    --sidebar-foreground: 0.93 0.005 264;
+    --sidebar-primary: 0.62 0.19 264;
+    --sidebar-primary-foreground: 0.98 0 0;
+    --sidebar-accent: 0.19 0.007 264;
+    --sidebar-accent-foreground: 0.93 0.005 264;
+    --sidebar-border: 0.22 0.008 264;
+    --sidebar-ring: 0.62 0.19 264;
+    /* Custom Titan tokens */
+    --titan-important-from: 0.28 0.12 264;
+    --titan-important-to: 0.45 0.19 264;
+    --titan-gold: 0.78 0.15 85;
+    --titan-surface: 0.155 0.007 264;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--border));
+    border-radius: 3px;
+  }
+}
