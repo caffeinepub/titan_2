@@ -47,13 +47,13 @@ export function ChatView() {
 
   return (
     <div
-      className="max-w-2xl mx-auto w-full flex flex-col min-h-[60vh]"
+      className="max-w-2xl mx-auto w-full flex flex-col gap-0"
       data-ocid="chat.section"
     >
       <h1 className="text-3xl font-bold text-foreground mb-6">Messages</h1>
 
       {!activePrincipal ? (
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center py-12">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -106,8 +106,8 @@ export function ChatView() {
         </div>
       ) : (
         <div
-          className="flex-1 flex flex-col min-h-0 bg-card rounded-2xl border border-border overflow-hidden"
-          style={{ minHeight: "60vh" }}
+          className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden"
+          style={{ height: "65vh" }}
         >
           {/* Chat Header */}
           <div className="flex items-center gap-3 p-3 sm:p-4 border-b border-border flex-shrink-0">

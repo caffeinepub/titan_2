@@ -41,7 +41,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex overflow-x-hidden">
+    <div className="h-screen overflow-hidden bg-background flex">
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
@@ -49,8 +49,8 @@ export default function App() {
         onResetRole={handleResetRole}
       />
 
-      <div className="flex-1 flex flex-col md:ml-60 min-h-screen min-w-0 overflow-x-hidden">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border px-4 md:px-6 h-14 flex items-center justify-between">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden md:ml-60">
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border px-4 md:px-6 h-14 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 md:hidden">
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-black text-xs">
@@ -84,7 +84,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 px-4 md:px-6 py-6 pb-24 md:pb-6 overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-6 pb-24 md:pb-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
@@ -92,7 +92,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="h-full"
+              className="w-full"
             >
               {activeView === "feed" && <FeedView role={role} />}
               {activeView === "chat" && <ChatView />}
@@ -102,7 +102,7 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <footer className="hidden md:block border-t border-border px-6 py-4">
+        <footer className="hidden md:block border-t border-border px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
               {["About", "Terms", "Privacy", "Community"].map((link) => (
