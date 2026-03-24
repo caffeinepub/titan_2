@@ -37,10 +37,10 @@ export function AdminPanel({ role }: AdminPanelProps) {
       <h1 className="text-3xl font-bold text-foreground mb-6">Admin Panel</h1>
 
       {/* Role Card */}
-      <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
               role === "owner" ? "bg-amber-500/20" : "bg-primary/20"
             }`}
           >
@@ -50,8 +50,8 @@ export function AdminPanel({ role }: AdminPanelProps) {
               <Shield className="w-7 h-7 text-primary" />
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h2 className="text-xl font-bold text-foreground">
                 {getRoleLabel(role)} Access
               </h2>
@@ -67,7 +67,7 @@ export function AdminPanel({ role }: AdminPanelProps) {
         </div>
 
         <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-muted/20 border border-border">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
+          <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span className="text-sm text-foreground">
             Backend admin status:{" "}
             <span
@@ -80,33 +80,37 @@ export function AdminPanel({ role }: AdminPanelProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 flex-wrap">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <AlertTriangle className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground font-medium">
-              Important Posts
+            <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Important
             </span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{importantCount}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">
+            {importantCount}
+          </p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 flex-wrap">
+            <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
               <Users className="w-5 h-5 text-muted-foreground" />
             </div>
-            <span className="text-sm text-muted-foreground font-medium">
-              Daily Posts
+            <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+              Daily
             </span>
           </div>
-          <p className="text-3xl font-bold text-foreground">{dailyCount}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">
+            {dailyCount}
+          </p>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
         <h3 className="font-semibold text-foreground mb-4">
           Content Management
         </h3>

@@ -1,12 +1,17 @@
-import { Crown, LogOut, MessageCircle, Rss, Shield, User } from "lucide-react";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import {
+  Crown,
+  MessageCircle,
+  RefreshCw,
+  Rss,
+  Shield,
+  User,
+} from "lucide-react";
 import {
   type TitanRole,
   canPost,
   getRoleBadgeStyle,
   getRoleLabel,
 } from "../lib/titanRole";
-import { getInitials } from "../lib/utils";
 
 type View = "feed" | "chat" | "profile" | "admin";
 
@@ -14,7 +19,7 @@ interface SidebarProps {
   activeView: View;
   onNavigate: (view: View) => void;
   role: TitanRole;
-  onLogout: () => void;
+  onResetRole: () => void;
 }
 
 const navItems = [
@@ -27,12 +32,8 @@ export function Sidebar({
   activeView,
   onNavigate,
   role,
-  onLogout,
+  onResetRole,
 }: SidebarProps) {
-  const { identity } = useInternetIdentity();
-  const principal = identity?.getPrincipal().toString() || "";
-  const shortPrincipal = principal ? `${principal.slice(0, 6)}...` : "Guest";
-
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-sidebar border-r border-sidebar-border fixed left-0 top-0 bottom-0 z-20">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border">
@@ -92,12 +93,16 @@ export function Sidebar({
             {role === "owner" ? (
               <Crown className="w-4 h-4 text-amber-400" />
             ) : (
-              getInitials(shortPrincipal)
+              <User className="w-4 h-4" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">
-              {shortPrincipal}
+              {role === "owner"
+                ? "Owner"
+                : role === "admin"
+                  ? "Admin"
+                  : "Guest"}
             </p>
             <span
               className={`text-xs px-1.5 py-0.5 rounded-md border ${getRoleBadgeStyle(role)}`}
@@ -108,11 +113,11 @@ export function Sidebar({
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground transition-colors"
-            onClick={onLogout}
-            data-ocid="sidebar.logout.button"
-            title="Logout"
+            onClick={onResetRole}
+            data-ocid="sidebar.toggle"
+            title="Switch Role"
           >
-            <LogOut className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>

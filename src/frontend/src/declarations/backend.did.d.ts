@@ -35,7 +35,23 @@ export interface PostView {
   'likes' : Array<Principal>,
   'timestamp' : Time,
 }
+export interface RegistrationData {
+  'age' : bigint,
+  'username' : string,
+  'gmail' : string,
+}
+export type RegistrationResult = { 'invalidEmail' : null } |
+  { 'other' : null } |
+  { 'usernameAlreadyExists' : null } |
+  { 'registrationSuccessful' : null };
 export type Time = bigint;
+export interface User {
+  'id' : bigint,
+  'age' : bigint,
+  'username' : string,
+  'gmail' : string,
+  'registrationTime' : Time,
+}
 export interface UserProfile {
   'bio' : string,
   'displayName' : string,
@@ -48,7 +64,11 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addComment' : ActorMethod<[bigint, string], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'checkUsernameAvailability' : ActorMethod<[string], boolean>,
   'createPost' : ActorMethod<[string, string, PostType], bigint>,
+  'deleteComment' : ActorMethod<[bigint], undefined>,
+  'deleteMessage' : ActorMethod<[bigint], undefined>,
+  'deletePost' : ActorMethod<[bigint], undefined>,
   'getAllPosts' : ActorMethod<[], Array<PostView>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -56,12 +76,20 @@ export interface _SERVICE {
   'getConversation' : ActorMethod<[Principal], Array<Message>>,
   'getImportantPosts' : ActorMethod<[], Array<PostView>>,
   'getPost' : ActorMethod<[bigint], PostView>,
+  'getPostLikes' : ActorMethod<[bigint], Array<Principal>>,
+  'getPostsByUser' : ActorMethod<[Principal], Array<PostView>>,
   'getProfileId' : ActorMethod<[Principal], UserProfile>,
+  'getRecentPosts' : ActorMethod<[], Array<PostView>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUsers' : ActorMethod<[], Array<User>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'likePost' : ActorMethod<[bigint], undefined>,
+  'registerUser' : ActorMethod<[RegistrationData], RegistrationResult>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'searchPosts' : ActorMethod<[string], Array<PostView>>,
   'sendMessage' : ActorMethod<[Principal, string], bigint>,
+  'updateComment' : ActorMethod<[bigint, string], undefined>,
+  'updatePost' : ActorMethod<[bigint, string, string, PostType], undefined>,
   'updateProfile' : ActorMethod<[string, string, string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

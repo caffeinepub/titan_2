@@ -30,7 +30,7 @@ export function MobileNav({
 
   return (
     <nav
-      className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-card/90 backdrop-blur-xl border border-border rounded-full px-3 py-2 shadow-card"
+      className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-card/90 backdrop-blur-xl border border-border rounded-full px-2 sm:px-3 py-2 shadow-card max-w-[calc(100vw-1rem)] w-max"
       aria-label="Mobile navigation"
       data-ocid="mobile.tab"
     >
@@ -38,7 +38,7 @@ export function MobileNav({
         <button
           type="button"
           key={tab.id}
-          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-full transition-colors ${
+          className={`flex flex-col items-center gap-0.5 px-2 sm:px-4 py-1.5 rounded-full transition-colors ${
             activeView === tab.id
               ? "bg-primary/20 text-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -54,11 +54,11 @@ export function MobileNav({
       {canPost(role) && (
         <button
           type="button"
-          className="w-12 h-12 rounded-full bg-primary hover:bg-accent text-primary-foreground flex items-center justify-center mx-1 shadow-glow transition-colors"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-primary hover:bg-accent text-primary-foreground flex items-center justify-center mx-1 shadow-glow transition-colors"
           onClick={onCreatePost}
           data-ocid="mobile.open_modal_button"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       )}
       {!canPost(role) && <div className="w-6" />}
@@ -67,7 +67,7 @@ export function MobileNav({
         <button
           type="button"
           key={tab.id}
-          className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-full transition-colors ${
+          className={`flex flex-col items-center gap-0.5 px-2 sm:px-4 py-1.5 rounded-full transition-colors ${
             activeView === tab.id
               ? "bg-primary/20 text-primary"
               : "text-muted-foreground hover:text-foreground"

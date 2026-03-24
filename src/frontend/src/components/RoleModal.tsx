@@ -75,16 +75,16 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
   return (
     <Dialog open={open}>
       <DialogContent
-        className="bg-card border-border max-w-md"
+        className="bg-card border-border w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto"
         data-ocid="role.modal"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
               <Shield className="w-5 h-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <DialogTitle className="text-foreground text-lg font-bold">
                 Welcome to Titan
               </DialogTitle>
@@ -99,62 +99,62 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
           <div className="space-y-3 mt-2">
             <button
               type="button"
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
+              className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
               onClick={handleContinueAsUser}
               data-ocid="role.user_button"
             >
               <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-foreground">
                   Continue as User
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   View posts and join conversations
                 </p>
               </div>
-              <Badge className="ml-auto bg-muted text-muted-foreground border-border">
+              <Badge className="ml-auto flex-shrink-0 bg-muted text-muted-foreground border-border">
                 User
               </Badge>
             </button>
 
             <button
               type="button"
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+              className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors text-left"
               onClick={() => setMode("admin")}
               data-ocid="role.admin_button"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <Shield className="w-5 h-5 text-primary" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-foreground">Admin Access</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   Create posts and manage content
                 </p>
               </div>
-              <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">
+              <Badge className="ml-auto flex-shrink-0 bg-primary/20 text-primary border-primary/30">
                 Admin
               </Badge>
             </button>
 
             <button
               type="button"
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left"
+              className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-left"
               onClick={() => setMode("owner")}
               data-ocid="role.owner_button"
             >
               <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                 <Crown className="w-5 h-5 text-amber-400" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-foreground">Owner Access</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   Full control over the platform
                 </p>
               </div>
-              <Badge className="ml-auto bg-amber-500/20 text-amber-400 border-amber-500/30">
+              <Badge className="ml-auto flex-shrink-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
                 Owner
               </Badge>
             </button>
@@ -165,11 +165,11 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
           <div className="space-y-4 mt-2">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border">
               {mode === "owner" ? (
-                <Crown className="w-5 h-5 text-amber-400" />
+                <Crown className="w-5 h-5 text-amber-400 flex-shrink-0" />
               ) : (
-                <Shield className="w-5 h-5 text-primary" />
+                <Shield className="w-5 h-5 text-primary flex-shrink-0" />
               )}
-              <div>
+              <div className="min-w-0">
                 <p className="font-semibold text-sm">
                   {mode === "owner" ? "Owner" : "Admin"} Passcode
                 </p>
@@ -214,7 +214,7 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
                 className="flex items-center gap-2 text-destructive text-sm"
                 data-ocid="role.error_state"
               >
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
             )}

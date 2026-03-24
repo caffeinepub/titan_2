@@ -51,16 +51,17 @@ export function FeedView({ role }: FeedViewProps) {
 
   return (
     <div className="max-w-2xl mx-auto w-full" data-ocid="feed.section">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Feed</h1>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      {/* Header row — wraps on small screens */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <h1 className="text-3xl font-bold text-foreground mr-auto">Feed</h1>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search Titan…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9 bg-input border-border w-48 md:w-64 text-sm"
+              className="pl-9 bg-input border-border w-40 sm:w-48 md:w-64 text-sm"
               data-ocid="feed.search_input"
             />
           </div>
@@ -68,7 +69,7 @@ export function FeedView({ role }: FeedViewProps) {
             type="button"
             size="sm"
             variant="outline"
-            className="border-border text-muted-foreground hover:text-foreground"
+            className="border-border text-muted-foreground hover:text-foreground flex-shrink-0"
             onClick={() => refetch()}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -76,7 +77,7 @@ export function FeedView({ role }: FeedViewProps) {
           {canPost(role) && (
             <button
               type="button"
-              className="w-9 h-9 rounded-full bg-primary hover:bg-accent text-primary-foreground flex items-center justify-center transition-colors shadow-glow"
+              className="w-9 h-9 rounded-full bg-primary hover:bg-accent text-primary-foreground flex items-center justify-center transition-colors shadow-glow flex-shrink-0"
               onClick={() => setCreateOpen(true)}
               data-ocid="feed.open_modal_button"
             >
@@ -86,7 +87,8 @@ export function FeedView({ role }: FeedViewProps) {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6" data-ocid="feed.tab">
+      {/* Filter tabs — wrap on small screens */}
+      <div className="flex flex-wrap gap-2 mb-6" data-ocid="feed.tab">
         {(["all", "important", "daily"] as FilterType[]).map((f) => (
           <button
             type="button"
@@ -132,11 +134,11 @@ export function FeedView({ role }: FeedViewProps) {
       {!loading && importantPosts.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-gradient-to-r from-[oklch(0.28_0.12_264)] to-[oklch(0.35_0.18_264)] border border-primary/30">
-            <AlertTriangle className="w-5 h-5 text-primary" />
-            <h2 className="font-bold text-foreground text-base">
+            <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0" />
+            <h2 className="font-bold text-foreground text-base min-w-0 truncate">
               Important Updates
             </h2>
-            <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">
+            <Badge className="ml-auto bg-primary/20 text-primary border-primary/30 flex-shrink-0">
               {importantPosts.length}
             </Badge>
           </div>

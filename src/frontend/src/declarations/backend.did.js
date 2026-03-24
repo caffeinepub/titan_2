@@ -46,12 +46,34 @@ export const Message = IDL.Record({
   'sender' : IDL.Principal,
   'timestamp' : Time,
 });
+export const User = IDL.Record({
+  'id' : IDL.Nat,
+  'age' : IDL.Nat,
+  'username' : IDL.Text,
+  'gmail' : IDL.Text,
+  'registrationTime' : Time,
+});
+export const RegistrationData = IDL.Record({
+  'age' : IDL.Nat,
+  'username' : IDL.Text,
+  'gmail' : IDL.Text,
+});
+export const RegistrationResult = IDL.Variant({
+  'invalidEmail' : IDL.Null,
+  'other' : IDL.Null,
+  'usernameAlreadyExists' : IDL.Null,
+  'registrationSuccessful' : IDL.Null,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addComment' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'checkUsernameAvailability' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'createPost' : IDL.Func([IDL.Text, IDL.Text, PostType], [IDL.Nat], []),
+  'deleteComment' : IDL.Func([IDL.Nat], [], []),
+  'deleteMessage' : IDL.Func([IDL.Nat], [], []),
+  'deletePost' : IDL.Func([IDL.Nat], [], []),
   'getAllPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -59,16 +81,24 @@ export const idlService = IDL.Service({
   'getConversation' : IDL.Func([IDL.Principal], [IDL.Vec(Message)], ['query']),
   'getImportantPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
   'getPost' : IDL.Func([IDL.Nat], [PostView], ['query']),
+  'getPostLikes' : IDL.Func([IDL.Nat], [IDL.Vec(IDL.Principal)], ['query']),
+  'getPostsByUser' : IDL.Func([IDL.Principal], [IDL.Vec(PostView)], ['query']),
   'getProfileId' : IDL.Func([IDL.Principal], [UserProfile], ['query']),
+  'getRecentPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'likePost' : IDL.Func([IDL.Nat], [], []),
+  'registerUser' : IDL.Func([RegistrationData], [RegistrationResult], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'searchPosts' : IDL.Func([IDL.Text], [IDL.Vec(PostView)], ['query']),
   'sendMessage' : IDL.Func([IDL.Principal, IDL.Text], [IDL.Nat], []),
+  'updateComment' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'updatePost' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, PostType], [], []),
   'updateProfile' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
 });
 
@@ -110,12 +140,34 @@ export const idlFactory = ({ IDL }) => {
     'sender' : IDL.Principal,
     'timestamp' : Time,
   });
+  const User = IDL.Record({
+    'id' : IDL.Nat,
+    'age' : IDL.Nat,
+    'username' : IDL.Text,
+    'gmail' : IDL.Text,
+    'registrationTime' : Time,
+  });
+  const RegistrationData = IDL.Record({
+    'age' : IDL.Nat,
+    'username' : IDL.Text,
+    'gmail' : IDL.Text,
+  });
+  const RegistrationResult = IDL.Variant({
+    'invalidEmail' : IDL.Null,
+    'other' : IDL.Null,
+    'usernameAlreadyExists' : IDL.Null,
+    'registrationSuccessful' : IDL.Null,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addComment' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'checkUsernameAvailability' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'createPost' : IDL.Func([IDL.Text, IDL.Text, PostType], [IDL.Nat], []),
+    'deleteComment' : IDL.Func([IDL.Nat], [], []),
+    'deleteMessage' : IDL.Func([IDL.Nat], [], []),
+    'deletePost' : IDL.Func([IDL.Nat], [], []),
     'getAllPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -127,16 +179,28 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getImportantPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
     'getPost' : IDL.Func([IDL.Nat], [PostView], ['query']),
+    'getPostLikes' : IDL.Func([IDL.Nat], [IDL.Vec(IDL.Principal)], ['query']),
+    'getPostsByUser' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(PostView)],
+        ['query'],
+      ),
     'getProfileId' : IDL.Func([IDL.Principal], [UserProfile], ['query']),
+    'getRecentPosts' : IDL.Func([], [IDL.Vec(PostView)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'likePost' : IDL.Func([IDL.Nat], [], []),
+    'registerUser' : IDL.Func([RegistrationData], [RegistrationResult], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'searchPosts' : IDL.Func([IDL.Text], [IDL.Vec(PostView)], ['query']),
     'sendMessage' : IDL.Func([IDL.Principal, IDL.Text], [IDL.Nat], []),
+    'updateComment' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'updatePost' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, PostType], [], []),
     'updateProfile' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   });
 };

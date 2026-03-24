@@ -97,12 +97,12 @@ export interface Comment {
     timestamp: Time;
     postId: bigint;
 }
-export interface Message {
+export interface User {
     id: bigint;
-    content: string;
-    recipient: Principal;
-    sender: Principal;
-    timestamp: Time;
+    age: bigint;
+    username: string;
+    gmail: string;
+    registrationTime: Time;
 }
 export interface PostView {
     id: bigint;
@@ -111,6 +111,18 @@ export interface PostView {
     content: string;
     author: Principal;
     likes: Array<Principal>;
+    timestamp: Time;
+}
+export interface RegistrationData {
+    age: bigint;
+    username: string;
+    gmail: string;
+}
+export interface Message {
+    id: bigint;
+    content: string;
+    recipient: Principal;
+    sender: Principal;
     timestamp: Time;
 }
 export interface UserProfile {
@@ -122,6 +134,12 @@ export enum PostType {
     important = "important",
     daily = "daily"
 }
+export enum RegistrationResult {
+    invalidEmail = "invalidEmail",
+    other = "other",
+    usernameAlreadyExists = "usernameAlreadyExists",
+    registrationSuccessful = "registrationSuccessful"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -131,7 +149,11 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addComment(postId: bigint, content: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    checkUsernameAvailability(username: string): Promise<boolean>;
     createPost(title: string, content: string, postType: PostType): Promise<bigint>;
+    deleteComment(commentId: bigint): Promise<void>;
+    deleteMessage(messageId: bigint): Promise<void>;
+    deletePost(postId: bigint): Promise<void>;
     getAllPosts(): Promise<Array<PostView>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -139,15 +161,23 @@ export interface backendInterface {
     getConversation(withUser: Principal): Promise<Array<Message>>;
     getImportantPosts(): Promise<Array<PostView>>;
     getPost(postId: bigint): Promise<PostView>;
+    getPostLikes(postId: bigint): Promise<Array<Principal>>;
+    getPostsByUser(user: Principal): Promise<Array<PostView>>;
     getProfileId(user: Principal): Promise<UserProfile>;
+    getRecentPosts(): Promise<Array<PostView>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getUsers(): Promise<Array<User>>;
     isCallerAdmin(): Promise<boolean>;
+    likePost(postId: bigint): Promise<void>;
+    registerUser(registration: RegistrationData): Promise<RegistrationResult>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchPosts(keyword: string): Promise<Array<PostView>>;
     sendMessage(recipient: Principal, content: string): Promise<bigint>;
+    updateComment(commentId: bigint, content: string): Promise<void>;
+    updatePost(postId: bigint, title: string, content: string, postType: PostType): Promise<void>;
     updateProfile(displayName: string, bio: string, avatarUrl: string): Promise<void>;
 }
-import type { PostType as _PostType, PostView as _PostView, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { PostType as _PostType, PostView as _PostView, RegistrationResult as _RegistrationResult, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -192,6 +222,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async checkUsernameAvailability(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.checkUsernameAvailability(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.checkUsernameAvailability(arg0);
+            return result;
+        }
+    }
     async createPost(arg0: string, arg1: string, arg2: PostType): Promise<bigint> {
         if (this.processError) {
             try {
@@ -203,6 +247,48 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createPost(arg0, arg1, to_candid_PostType_n3(this._uploadFile, this._downloadFile, arg2));
+            return result;
+        }
+    }
+    async deleteComment(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteComment(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteComment(arg0);
+            return result;
+        }
+    }
+    async deleteMessage(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteMessage(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteMessage(arg0);
+            return result;
+        }
+    }
+    async deletePost(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deletePost(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deletePost(arg0);
             return result;
         }
     }
@@ -304,6 +390,34 @@ export class Backend implements backendInterface {
             return from_candid_PostView_n6(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getPostLikes(arg0: bigint): Promise<Array<Principal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPostLikes(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPostLikes(arg0);
+            return result;
+        }
+    }
+    async getPostsByUser(arg0: Principal): Promise<Array<PostView>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPostsByUser(arg0);
+                return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPostsByUser(arg0);
+            return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getProfileId(arg0: Principal): Promise<UserProfile> {
         if (this.processError) {
             try {
@@ -316,6 +430,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getProfileId(arg0);
             return result;
+        }
+    }
+    async getRecentPosts(): Promise<Array<PostView>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getRecentPosts();
+                return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getRecentPosts();
+            return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -332,6 +460,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getUsers(): Promise<Array<User>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUsers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUsers();
+            return result;
+        }
+    }
     async isCallerAdmin(): Promise<boolean> {
         if (this.processError) {
             try {
@@ -344,6 +486,34 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.isCallerAdmin();
             return result;
+        }
+    }
+    async likePost(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.likePost(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.likePost(arg0);
+            return result;
+        }
+    }
+    async registerUser(arg0: RegistrationData): Promise<RegistrationResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerUser(arg0);
+                return from_candid_RegistrationResult_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerUser(arg0);
+            return from_candid_RegistrationResult_n13(this._uploadFile, this._downloadFile, result);
         }
     }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
@@ -388,6 +558,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateComment(arg0: bigint, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateComment(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateComment(arg0, arg1);
+            return result;
+        }
+    }
+    async updatePost(arg0: bigint, arg1: string, arg2: string, arg3: PostType): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePost(arg0, arg1, arg2, to_candid_PostType_n3(this._uploadFile, this._downloadFile, arg3));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePost(arg0, arg1, arg2, to_candid_PostType_n3(this._uploadFile, this._downloadFile, arg3));
+            return result;
+        }
+    }
     async updateProfile(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
@@ -408,6 +606,9 @@ function from_candid_PostType_n8(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }
 function from_candid_PostView_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PostView): PostView {
     return from_candid_record_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_RegistrationResult_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _RegistrationResult): RegistrationResult {
+    return from_candid_variant_n14(_uploadFile, _downloadFile, value);
 }
 function from_candid_UserRole_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n12(_uploadFile, _downloadFile, value);
@@ -450,6 +651,17 @@ function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Ui
     guest: null;
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    invalidEmail: null;
+} | {
+    other: null;
+} | {
+    usernameAlreadyExists: null;
+} | {
+    registrationSuccessful: null;
+}): RegistrationResult {
+    return "invalidEmail" in value ? RegistrationResult.invalidEmail : "other" in value ? RegistrationResult.other : "usernameAlreadyExists" in value ? RegistrationResult.usernameAlreadyExists : "registrationSuccessful" in value ? RegistrationResult.registrationSuccessful : value;
 }
 function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     important: null;

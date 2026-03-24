@@ -18,6 +18,7 @@ export function useAllPosts() {
       return actor.getAllPosts();
     },
     enabled: !!actor && !isFetching,
+    refetchInterval: 5000,
   });
 }
 
@@ -30,6 +31,7 @@ export function useSearchPosts(keyword: string) {
       return actor.searchPosts(keyword);
     },
     enabled: !!actor && !isFetching && keyword.trim().length > 0,
+    refetchInterval: 5000,
   });
 }
 
@@ -42,6 +44,7 @@ export function useComments(postId: bigint, enabled: boolean) {
       return actor.getComments(postId);
     },
     enabled: !!actor && !isFetching && enabled,
+    refetchInterval: enabled ? 3000 : false,
   });
 }
 
@@ -115,6 +118,20 @@ export function useAddComment() {
       queryClient.invalidateQueries({
         queryKey: ["comments", postId.toString()],
       });
+    },
+  });
+}
+
+export function useLikePost() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId }: { postId: bigint }) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.likePost(postId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
   });
 }

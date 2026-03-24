@@ -14,8 +14,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { PostView } from "../backend";
 import { PostType } from "../backend";
-import { useAddComment, useComments } from "../hooks/useQueries";
-import { formatRelativeTime, getInitials } from "../lib/utils";
+import { useAddComment, useComments, useLikePost } from "../hooks/useQueries";
+import { formatRelativeTime, getInitials } from "../lib/titanUtils";
 
 interface PostCardProps {
   post: PostView;
@@ -23,8 +23,6 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, index }: PostCardProps) {
-  const [liked, setLiked] = useState(false);
-  const [localLikes, setLocalLikes] = useState(post.likes.length);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const isImportant = post.postType === PostType.important;
@@ -36,10 +34,16 @@ export function PostCard({ post, index }: PostCardProps) {
     showComments,
   );
   const addComment = useAddComment();
+  const likePost = useLikePost();
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLocalLikes((prev) => (liked ? prev - 1 : prev + 1));
+  const likesCount = post.likes.length;
+
+  const handleLike = async () => {
+    try {
+      await likePost.mutateAsync({ postId: post.id });
+    } catch {
+      toast.error("Failed to like post");
+    }
   };
 
   const handleComment = async () => {
@@ -70,24 +74,23 @@ export function PostCard({ post, index }: PostCardProps) {
       }`}
       data-ocid={`feed.item.${index}`}
     >
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between mb-4 gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
               {getInitials(shortAuthor)}
             </div>
-            <div>
-              <span className="font-semibold text-foreground text-sm">
+            <div className="min-w-0">
+              <span className="font-semibold text-foreground text-sm truncate block">
                 {shortAuthor}
               </span>
-              <br />
               <span className="text-xs text-muted-foreground">
                 {formatRelativeTime(post.timestamp)}
               </span>
             </div>
           </div>
           <Badge
-            className={`text-xs ${
+            className={`text-xs flex-shrink-0 ${
               isImportant
                 ? "bg-primary/20 text-primary border-primary/40"
                 : "bg-muted text-muted-foreground border-border"
@@ -96,10 +99,14 @@ export function PostCard({ post, index }: PostCardProps) {
             {isImportant ? (
               <>
                 <AlertTriangle className="w-3 h-3 mr-1" />
-                Important Update
+                <span className="hidden sm:inline">Important Update</span>
+                <span className="sm:hidden">Important</span>
               </>
             ) : (
-              "Daily Update"
+              <>
+                <span className="hidden sm:inline">Daily Update</span>
+                <span className="sm:hidden">Daily</span>
+              </>
             )}
           </Badge>
         </div>
@@ -113,28 +120,31 @@ export function PostCard({ post, index }: PostCardProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-1 pt-3 border-t border-border/50">
+        <div className="flex items-center gap-1 pt-3 border-t border-border/50 flex-wrap">
           <button
             type="button"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              liked
-                ? "text-rose-400 bg-rose-400/10"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              likePost.isPending
+                ? "opacity-60 cursor-wait text-rose-400 bg-rose-400/10"
+                : "text-muted-foreground hover:text-rose-400 hover:bg-rose-400/10"
             }`}
             onClick={handleLike}
+            disabled={likePost.isPending}
             data-ocid={`feed.item.${index}.toggle`}
           >
-            <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
-            <span>{localLikes}</span>
+            <Heart className="w-4 h-4" />
+            <span>{likesCount}</span>
           </button>
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             onClick={() => setShowComments(!showComments)}
             data-ocid={`feed.item.${index}.button`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>{comments.length > 0 ? comments.length : "Comment"}</span>
+            <span className="hidden xs:inline">
+              {comments.length > 0 ? comments.length : "Comment"}
+            </span>
             {showComments ? (
               <ChevronUp className="w-3 h-3" />
             ) : (
@@ -143,7 +153,7 @@ export function PostCard({ post, index }: PostCardProps) {
           </button>
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors ml-auto"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors ml-auto"
             onClick={handleShare}
           >
             <Share2 className="w-4 h-4" />
@@ -152,7 +162,7 @@ export function PostCard({ post, index }: PostCardProps) {
       </div>
 
       {showComments && (
-        <div className="border-t border-border/50 p-5 space-y-4">
+        <div className="border-t border-border/50 p-4 sm:p-5 space-y-4">
           {commentsLoading && (
             <div
               className="text-center text-muted-foreground text-sm py-2"
@@ -178,7 +188,7 @@ export function PostCard({ post, index }: PostCardProps) {
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
                 {getInitials(comment.author.toString().slice(0, 5))}
               </div>
-              <div className="flex-1 bg-muted/30 rounded-xl px-3 py-2">
+              <div className="flex-1 min-w-0 bg-muted/30 rounded-xl px-3 py-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-semibold text-foreground">
                     {`${comment.author.toString().slice(0, 5)}...`}
@@ -187,7 +197,9 @@ export function PostCard({ post, index }: PostCardProps) {
                     {formatRelativeTime(comment.timestamp)}
                   </span>
                 </div>
-                <p className="text-sm text-foreground">{comment.content}</p>
+                <p className="text-sm text-foreground break-words">
+                  {comment.content}
+                </p>
               </div>
             </div>
           ))}
@@ -198,7 +210,7 @@ export function PostCard({ post, index }: PostCardProps) {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleComment()}
-              className="bg-input border-border text-sm"
+              className="bg-input border-border text-sm min-w-0"
               data-ocid={`feed.item.${index}.input`}
             />
             <Button

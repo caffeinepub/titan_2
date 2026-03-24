@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useConversation, useSendMessage } from "../hooks/useQueries";
-import { formatRelativeTime, getInitials } from "../lib/utils";
+import { formatRelativeTime, getInitials } from "../lib/titanUtils";
 
 export function ChatView() {
   const [principalInput, setPrincipalInput] = useState("");
@@ -47,7 +47,7 @@ export function ChatView() {
 
   return (
     <div
-      className="max-w-2xl mx-auto w-full h-full flex flex-col"
+      className="max-w-2xl mx-auto w-full flex flex-col min-h-[60vh]"
       data-ocid="chat.section"
     >
       <h1 className="text-3xl font-bold text-foreground mb-6">Messages</h1>
@@ -95,7 +95,7 @@ export function ChatView() {
             </div>
 
             <div className="p-4 rounded-xl bg-muted/20 border border-border">
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center break-all">
                 Your Principal ID:{" "}
                 <span className="font-mono text-foreground">
                   {myPrincipal || "Not logged in"}
@@ -105,23 +105,26 @@ export function ChatView() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col min-h-0 bg-card rounded-2xl border border-border overflow-hidden">
+        <div
+          className="flex-1 flex flex-col min-h-0 bg-card rounded-2xl border border-border overflow-hidden"
+          style={{ minHeight: "60vh" }}
+        >
           {/* Chat Header */}
-          <div className="flex items-center gap-3 p-4 border-b border-border">
+          <div className="flex items-center gap-3 p-3 sm:p-4 border-b border-border flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground"
+              className="text-muted-foreground flex-shrink-0"
               onClick={() => setActivePrincipal(null)}
               data-ocid="chat.close_button"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
+            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold flex-shrink-0">
               {getInitials(activePrincipal.toString().slice(0, 5))}
             </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground text-sm truncate">
                 {activePrincipal.toString().slice(0, 8)}...
               </p>
               <p className="text-xs text-muted-foreground">Principal ID</p>
@@ -129,7 +132,7 @@ export function ChatView() {
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-3 sm:p-4">
             {isLoading && (
               <div
                 className="flex justify-center py-8"
@@ -155,13 +158,13 @@ export function ChatView() {
                     data-ocid={`chat.item.${i + 1}`}
                   >
                     <div
-                      className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
+                      className={`max-w-[80%] sm:max-w-[70%] px-3 sm:px-4 py-2.5 rounded-2xl text-sm ${
                         isMe
                           ? "bg-primary text-primary-foreground rounded-br-sm"
                           : "bg-muted/60 text-foreground rounded-bl-sm"
                       }`}
                     >
-                      <p>{msg.content}</p>
+                      <p className="break-words">{msg.content}</p>
                       <p
                         className={`text-xs mt-1 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}
                       >
@@ -175,17 +178,17 @@ export function ChatView() {
           </ScrollArea>
 
           {/* Message Input */}
-          <div className="p-4 border-t border-border flex gap-2">
+          <div className="p-3 sm:p-4 border-t border-border flex gap-2 flex-shrink-0">
             <Input
               placeholder="Type a message..."
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="bg-input border-border"
+              className="bg-input border-border min-w-0"
               data-ocid="chat.textarea"
             />
             <Button
-              className="bg-primary hover:bg-accent text-primary-foreground px-4 flex-shrink-0"
+              className="bg-primary hover:bg-accent text-primary-foreground px-3 sm:px-4 flex-shrink-0"
               onClick={handleSend}
               disabled={sendMessage.isPending || !messageText.trim()}
               data-ocid="chat.submit_button"

@@ -1,86 +1,55 @@
 import { Toaster } from "@/components/ui/sonner";
 import { Bell, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminPanel } from "./components/AdminPanel";
 import { ChatView } from "./components/ChatView";
 import { CreatePostModal } from "./components/CreatePostModal";
 import { FeedView } from "./components/FeedView";
-import { LoginScreen } from "./components/LoginScreen";
 import { MobileNav } from "./components/MobileNav";
 import { ProfileView } from "./components/ProfileView";
+import { RegistrationModal } from "./components/RegistrationModal";
 import { RoleModal } from "./components/RoleModal";
 import { Sidebar } from "./components/Sidebar";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
-import { type TitanRole, clearTitanRole, getTitanRole } from "./lib/titanRole";
+import { isRegistered } from "./lib/titanRegistration";
+import { type TitanRole, clearTitanRole } from "./lib/titanRole";
 
 type View = "feed" | "chat" | "profile" | "admin";
 
 export default function App() {
-  const { identity, isLoginSuccess, clear, isInitializing } =
-    useInternetIdentity();
+  const [showRegistration, setShowRegistration] = useState(!isRegistered());
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [role, setRole] = useState<TitanRole>("user");
   const [activeView, setActiveView] = useState<View>("feed");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
 
-  useEffect(() => {
-    if (isLoginSuccess && identity) {
-      const stored = getTitanRole();
-      if (stored !== "user") {
-        setRole(stored);
-      } else {
-        setShowRoleModal(true);
-      }
-    }
-  }, [isLoginSuccess, identity]);
+  const handleRegistrationComplete = () => {
+    setShowRegistration(false);
+    setShowRoleModal(true);
+  };
 
   const handleRoleSelected = (selectedRole: TitanRole) => {
     setRole(selectedRole);
     setShowRoleModal(false);
   };
 
-  const handleLogout = () => {
+  const handleResetRole = () => {
     clearTitanRole();
     setRole("user");
     setActiveView("feed");
-    clear();
+    setShowRoleModal(true);
   };
 
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-black text-lg">
-              T
-            </span>
-          </div>
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!identity) {
-    return (
-      <>
-        <LoginScreen />
-        <Toaster theme="dark" />
-      </>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-x-hidden">
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
         role={role}
-        onLogout={handleLogout}
+        onResetRole={handleResetRole}
       />
 
-      <div className="flex-1 flex flex-col md:ml-60 min-h-screen">
+      <div className="flex-1 flex flex-col md:ml-60 min-h-screen min-w-0 overflow-x-hidden">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border px-4 md:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2 md:hidden">
             <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
@@ -115,7 +84,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 px-4 md:px-6 py-6 pb-24 md:pb-6">
+        <main className="flex-1 px-4 md:px-6 py-6 pb-24 md:pb-6 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
@@ -134,8 +103,8 @@ export default function App() {
         </main>
 
         <footer className="hidden md:block border-t border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex gap-4 text-xs text-muted-foreground flex-wrap">
               {["About", "Terms", "Privacy", "Community"].map((link) => (
                 <span
                   key={link}
@@ -170,6 +139,11 @@ export default function App() {
       <CreatePostModal
         open={mobileCreateOpen}
         onClose={() => setMobileCreateOpen(false)}
+      />
+
+      <RegistrationModal
+        open={showRegistration}
+        onComplete={handleRegistrationComplete}
       />
 
       <RoleModal open={showRoleModal} onClose={handleRoleSelected} />
