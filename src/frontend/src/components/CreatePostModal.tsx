@@ -13,17 +13,14 @@ import {
   AlertCircle,
   AlertTriangle,
   Calendar,
-  ImagePlus,
   Loader2,
   RefreshCw,
   WifiOff,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PostType } from "../backend";
 import { useBackendStatus, useCreatePost } from "../hooks/useQueries";
-import { useStorageUpload } from "../hooks/useStorageUpload";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -36,62 +33,32 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
   const [postType, setPostType] = useState<PostType>(PostType.daily);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevBackendOnlineRef = useRef<boolean | undefined>(undefined);
   const createPost = useCreatePost();
   const {
     data: backendOnline,
     refetch: retryBackendCheck,
     isFetching: isCheckingBackend,
   } = useBackendStatus();
-  const { uploadImage, isUploading, uploadError } = useStorageUpload();
 
   const isBackendOffline = backendOnline === false;
   const isTemporarilyUnavailable =
     submitError?.includes("temporarily unavailable") ?? false;
 
+  // Clear errors when backend recovers
   useEffect(() => {
-    if (backendOnline === true && isTemporarilyUnavailable) {
-      setSubmitError(null);
-    }
-  }, [backendOnline, isTemporarilyUnavailable]);
+    const prev = prevBackendOnlineRef.current;
+    prevBackendOnlineRef.current = backendOnline ?? undefined;
 
-  // Show upload error in the submit error area
-  useEffect(() => {
-    if (uploadError) {
-      setSubmitError(uploadError);
+    if (backendOnline === true) {
+      if (isTemporarilyUnavailable) {
+        setSubmitError(null);
+      }
+      if (prev === false && submitError?.includes("Server is down")) {
+        setSubmitError(null);
+      }
     }
-  }, [uploadError]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!(["image/jpeg", "image/png"] as string[]).includes(file.type)) {
-      setSubmitError("Only JPG and PNG images are allowed.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setSubmitError("Image must be under 5MB.");
-      return;
-    }
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setSubmitError(null);
-    // reset input so same file can be re-selected after removal
-    e.target.value = "";
-  };
-
-  const handleRemoveImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
-    setUploadProgress(0);
-  };
+  }, [backendOnline, isTemporarilyUnavailable, submitError]);
 
   const handleSubmit = async () => {
     setSubmitError(null);
@@ -106,24 +73,11 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
       return;
     }
 
-    let resolvedImageUrl: string | null = null;
-    if (imageFile) {
-      try {
-        resolvedImageUrl = await uploadImage(imageFile, (pct) =>
-          setUploadProgress(pct),
-        );
-      } catch {
-        // uploadError is surfaced via the useEffect above
-        return;
-      }
-    }
-
     try {
       await createPost.mutateAsync({
         title: title.trim(),
         content: content.trim(),
         postType,
-        imageUrl: resolvedImageUrl,
       });
       toast.success("Post published!");
       resetForm();
@@ -146,7 +100,6 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
     setContent("");
     setPostType(PostType.daily);
     setSubmitError(null);
-    handleRemoveImage();
   };
 
   const startRetryCountdown = () => {
@@ -171,14 +124,11 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
   const handleClose = () => {
     setSubmitError(null);
     setRetryCountdown(null);
-    handleRemoveImage();
     onClose();
   };
 
   const isCountingDown = retryCountdown !== null;
-  // Submit is only disabled during active operations, not due to backend status
-  const isSubmitDisabled =
-    createPost.isPending || isCountingDown || isUploading;
+  const isSubmitDisabled = createPost.isPending || isCountingDown;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -193,7 +143,7 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
-          {/* Backend offline warning banner */}
+          {/* Backend offline warning banner — informational only, does not block */}
           {isBackendOffline && (
             <div
               className="flex items-start gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30"
@@ -201,7 +151,7 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
             >
               <WifiOff className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-500 flex-1">
-                Server is down, retrying...
+                Server may be slow. You can still try posting.
               </p>
               <button
                 type="button"
@@ -295,78 +245,6 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
             />
           </div>
 
-          {/* Image Upload Section */}
-          <div className="space-y-2">
-            <Label className="text-foreground text-sm font-medium">Photo</Label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              onChange={handleFileChange}
-              data-ocid="create_post.upload_button"
-            />
-
-            {!imagePreview ? (
-              <button
-                type="button"
-                className="w-full flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border/70 hover:bg-muted/50 transition-all"
-                onClick={() => fileInputRef.current?.click()}
-                data-ocid="create_post.dropzone"
-              >
-                <ImagePlus className="w-6 h-6" />
-                <span className="text-sm">Add Photo</span>
-                <span className="text-xs opacity-60">JPG or PNG · max 5MB</span>
-              </button>
-            ) : (
-              <div className="relative rounded-xl overflow-hidden border border-border">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-48 w-full object-cover rounded-xl"
-                />
-                {/* Upload progress overlay */}
-                {isUploading && (
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 rounded-xl">
-                    <Loader2 className="w-6 h-6 text-white animate-spin" />
-                    <span className="text-white text-sm font-medium">
-                      Uploading... {uploadProgress}%
-                    </span>
-                    <div className="w-2/3 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {/* Action buttons */}
-                {!isUploading && (
-                  <div className="absolute top-2 right-2 flex gap-1.5">
-                    <button
-                      type="button"
-                      className="w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Change image"
-                      data-ocid="create_post.edit_button"
-                    >
-                      <ImagePlus className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      className="w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-red-500/80 transition-colors"
-                      onClick={handleRemoveImage}
-                      title="Remove image"
-                      data-ocid="create_post.delete_button"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
           {postType === PostType.important && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/30 flex-wrap">
               <AlertTriangle className="w-4 h-4 text-primary flex-shrink-0" />
@@ -436,12 +314,7 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
               disabled={isSubmitDisabled}
               data-ocid="create_post.submit_button"
             >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Uploading {uploadProgress}%...
-                </>
-              ) : createPost.isPending ? (
+              {createPost.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Publishing...

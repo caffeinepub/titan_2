@@ -1,8 +1,8 @@
 import {
   Crown,
   KeyRound,
+  LogOut,
   MessageCircle,
-  RefreshCw,
   Rss,
   Shield,
   User,
@@ -20,7 +20,7 @@ interface SidebarProps {
   activeView: View;
   onNavigate: (view: View) => void;
   role: TitanRole;
-  onResetRole: () => void;
+  onLogout: () => void;
   onBecomeAdmin?: () => void;
 }
 
@@ -34,7 +34,7 @@ export function Sidebar({
   activeView,
   onNavigate,
   role,
-  onResetRole,
+  onLogout,
   onBecomeAdmin,
 }: SidebarProps) {
   return (
@@ -127,12 +127,12 @@ export function Sidebar({
           </div>
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            onClick={onResetRole}
+            className="text-muted-foreground hover:text-destructive transition-colors"
+            onClick={onLogout}
             data-ocid="sidebar.toggle"
-            title="Switch Role"
+            title="Log Out / Switch Account"
           >
-            <RefreshCw className="w-4 h-4" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>

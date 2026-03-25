@@ -10,20 +10,18 @@ import { FeedView } from "./components/FeedView";
 import { MobileNav } from "./components/MobileNav";
 import { ProfileView } from "./components/ProfileView";
 import { RegistrationModal } from "./components/RegistrationModal";
-import { RoleModal } from "./components/RoleModal";
 import { Sidebar } from "./components/Sidebar";
 import { SplashScreen } from "./components/SplashScreen";
 import { ensurePrincipalKey, isRegistered } from "./lib/titanRegistration";
-import { type TitanRole, clearTitanRole } from "./lib/titanRole";
+import { type TitanRole, clearTitanRole, getTitanRole } from "./lib/titanRole";
 
 type View = "feed" | "chat" | "profile" | "admin";
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [showRegistration, setShowRegistration] = useState(!isRegistered());
-  const [showRoleModal, setShowRoleModal] = useState(false);
   const [showAccessKeyModal, setShowAccessKeyModal] = useState(false);
-  const [role, setRole] = useState<TitanRole>("user");
+  const [role, setRole] = useState<TitanRole>(getTitanRole());
   const [activeView, setActiveView] = useState<View>("feed");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
 
@@ -36,19 +34,15 @@ export default function App() {
 
   const handleRegistrationComplete = () => {
     setShowRegistration(false);
-    setShowRoleModal(true);
   };
 
-  const handleRoleSelected = (selectedRole: TitanRole) => {
-    setRole(selectedRole);
-    setShowRoleModal(false);
-  };
-
-  const handleResetRole = () => {
+  const handleLogout = () => {
     clearTitanRole();
+    localStorage.removeItem("titanUserId");
+    localStorage.removeItem("titanUserData");
     setRole("user");
     setActiveView("feed");
-    setShowRoleModal(true);
+    setShowRegistration(true);
   };
 
   const handleAccessKeySuccess = (newRole: TitanRole) => {
@@ -64,7 +58,7 @@ export default function App() {
         activeView={activeView}
         onNavigate={setActiveView}
         role={role}
-        onResetRole={handleResetRole}
+        onLogout={handleLogout}
         onBecomeAdmin={() => setShowAccessKeyModal(true)}
       />
 
@@ -115,7 +109,9 @@ export default function App() {
             >
               {activeView === "feed" && <FeedView role={role} />}
               {activeView === "chat" && <ChatView />}
-              {activeView === "profile" && <ProfileView role={role} />}
+              {activeView === "profile" && (
+                <ProfileView role={role} onLogout={handleLogout} />
+              )}
               {activeView === "admin" && <AdminPanel role={role} />}
             </motion.div>
           </AnimatePresence>
@@ -165,8 +161,6 @@ export default function App() {
         open={showRegistration}
         onComplete={handleRegistrationComplete}
       />
-
-      <RoleModal open={showRoleModal} onClose={handleRoleSelected} />
 
       <AccessKeyModal
         open={showAccessKeyModal}

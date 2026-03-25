@@ -1,30 +1,25 @@
 # Titan
 
 ## Current State
-The app has a registration flow that generates a UUID as `principalId` and stores it in localStorage via `titanRegistration.ts`. However:
-- `ChatView` reads the user's identity from `useInternetIdentity()` which returns anonymous/undefined since II login is not used
-- There is no guarantee a returning user (who skips registration because `isRegistered()` is true) has a principalKey assigned and available in session context
-- Nothing ensures the principalKey is propagated to all actions
-- If localStorage is cleared, returning users get no principalKey regenerated
+App shows a RoleModal popup after registration (and on reset) asking users to select "Continue as User", "Admin Access", or "Owner Access". The role state in App.tsx is initialized to `"user"` instead of reading from localStorage on load.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `ensurePrincipalKey()` utility that always returns a valid UUID principalKey — retrieving from localStorage or generating+saving a new one if missing
-- A React context/hook `usePrincipalKey()` that provides the current user's principalKey across the whole app
-- Call `ensurePrincipalKey()` at app startup so every session always has a key
+- Auto-load saved role from `localStorage` on app startup (via `getTitanRole()`)
+- Logout / Switch Account option in ProfileView that clears role and registration data, returning to registration screen
 
 ### Modify
-- `App.tsx` — call `ensurePrincipalKey()` on mount; pass the principalKey down or provide via context
-- `ChatView.tsx` — replace `identity?.getPrincipal().toString()` with the stored UUID principalKey from localStorage; show it as "Your Principal Key"
-- `titanRegistration.ts` — add `ensurePrincipalKey()` export
-- `RegistrationModal.tsx` — use `ensurePrincipalKey()` instead of raw `crypto.randomUUID()` so the key is always consistent
+- `App.tsx`: Initialize role state from `getTitanRole()` instead of hardcoded `"user"`. After registration, skip RoleModal — default to user role. Remove RoleModal usage entirely.
+- `ProfileView.tsx`: Add a "Log Out / Switch Account" section with a button that clears stored role + registration data and triggers re-registration.
+- `Sidebar.tsx`: Replace "Switch Role" (RefreshCw) with "Log Out" button that calls the same clear handler.
 
 ### Remove
-- The dependency on `useInternetIdentity` in `ChatView` for displaying the user's own principal (it showed anonymous ICP principal which is meaningless here)
+- `RoleModal` from `App.tsx` rendering and state
+- `showRoleModal` state and `handleRegistrationComplete`/`handleRoleSelected` functions
 
 ## Implementation Plan
-1. Add `ensurePrincipalKey()` to `titanRegistration.ts`
-2. Update `RegistrationModal.tsx` to use `ensurePrincipalKey()` instead of raw `crypto.randomUUID()`
-3. Update `App.tsx` to call `ensurePrincipalKey()` on mount
-4. Update `ChatView.tsx` to use `getRegistrationId()` / `ensurePrincipalKey()` for displaying the user's own key, removing the II identity dependency for this purpose
+1. Update `App.tsx` — init role from getTitanRole(), remove RoleModal, after registration just close modal without popup
+2. Update `ProfileView.tsx` — add logout/switch account section
+3. Update `Sidebar.tsx` — replace switch role button with logout button
+4. Pass logout callback through App → Sidebar/ProfileView

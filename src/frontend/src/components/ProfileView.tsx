@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
@@ -6,6 +6,7 @@ import {
   Copy,
   Crown,
   Loader2,
+  LogOut,
   Mail,
   Shield,
   User,
@@ -24,9 +25,10 @@ import { getInitials } from "../lib/titanUtils";
 
 interface ProfileViewProps {
   role: TitanRole;
+  onLogout?: () => void;
 }
 
-export function ProfileView({ role }: ProfileViewProps) {
+export function ProfileView({ role, onLogout }: ProfileViewProps) {
   const { identity } = useInternetIdentity();
   const principal = identity?.getPrincipal().toString() || "";
   const { isLoading } = useCallerProfile();
@@ -193,6 +195,31 @@ export function ProfileView({ role }: ProfileViewProps) {
               </p>
             )}
           </div>
+
+          {/* Logout / Switch Account */}
+          {onLogout && (
+            <div className="bg-card border border-border rounded-2xl p-4 sm:p-6">
+              <h3 className="font-semibold text-foreground mb-3">Account</h3>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+                data-ocid="profile.logout_button"
+              >
+                <div className="w-8 h-8 rounded-lg bg-destructive/15 flex items-center justify-center flex-shrink-0">
+                  <LogOut className="w-4 h-4 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-destructive">
+                    Log Out / Switch Account
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Clears your saved role and account data
+                  </p>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

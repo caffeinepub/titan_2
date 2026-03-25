@@ -7,7 +7,6 @@ import type {
   PostView,
   UserProfile,
 } from "../backend";
-import { embedPostImage } from "../lib/postImage";
 import { useActor } from "./useActor";
 
 function isCanisterStoppedError(err: unknown): boolean {
@@ -124,19 +123,14 @@ export function useCreatePost() {
       title,
       content,
       postType,
-      imageUrl,
     }: {
       title: string;
       content: string;
       postType: PostType;
-      imageUrl?: string | null;
     }) => {
       if (!actor) throw new Error("Not connected");
-      const finalContent = imageUrl
-        ? embedPostImage(content, imageUrl)
-        : content;
       try {
-        return await actor.createPost(title, finalContent, postType);
+        return await actor.createPost(title, content, postType);
       } catch (err) {
         console.error("[Titan Backend Error]", err);
         if (isCanisterStoppedError(err)) {
