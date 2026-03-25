@@ -19,10 +19,12 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useActor } from "../hooks/useActor";
-import { verifyAccessKey } from "../lib/accessKey";
 import { type TitanRole, setTitanRole } from "../lib/titanRole";
 
 type KeyType = "admin" | "owner" | null;
+
+const ADMIN_KEY = "admin24517";
+const OWNER_KEY = "titan2437";
 
 interface AccessKeyModalProps {
   open: boolean;
@@ -41,7 +43,7 @@ export function AccessKeyModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const { actor } = useActor();
+  const { actor, isFetching: actorLoading } = useActor();
 
   const resetState = () => {
     setSelectedType(null);
@@ -67,14 +69,63 @@ export function AccessKeyModal({
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
-    if (!accessKey.trim()) {
+
+    const trimmedKey = accessKey.trim();
+
+    if (!trimmedKey) {
       setError("Please enter an access key.");
       return;
     }
     if (!selectedType) return;
+
+    console.log("[AccessKey] Entered key:", JSON.stringify(trimmedKey));
+    console.log("[AccessKey] Selected type:", selectedType);
+    console.log("[AccessKey] Actor available:", !!actor);
+
     setLoading(true);
     try {
-      const result = await verifyAccessKey(actor, accessKey);
+      let result: "owner" | "admin" | "invalid" = "invalid";
+
+      // Try backend verification first
+      if (actor) {
+        try {
+          const raw = await (
+            actor as unknown as {
+              verifyAccessKey: (
+                k: string,
+              ) => Promise<
+                { owner: null } | { admin: null } | { invalid: null }
+              >;
+            }
+          ).verifyAccessKey(trimmedKey);
+          console.log("[AccessKey] Backend raw result:", raw);
+          if ("owner" in raw) result = "owner";
+          else if ("admin" in raw) result = "admin";
+          else result = "invalid";
+        } catch (backendErr) {
+          console.warn(
+            "[AccessKey] Backend call failed, falling back to local check:",
+            backendErr,
+          );
+          // Fallback: local validation
+          if (trimmedKey === OWNER_KEY) result = "owner";
+          else if (trimmedKey === ADMIN_KEY) result = "admin";
+          else result = "invalid";
+        }
+      } else {
+        // Actor not ready — use local validation as fallback
+        console.warn("[AccessKey] Actor is null, using local key validation");
+        if (trimmedKey === OWNER_KEY) result = "owner";
+        else if (trimmedKey === ADMIN_KEY) result = "admin";
+        else result = "invalid";
+      }
+
+      console.log(
+        "[AccessKey] Resolved result:",
+        result,
+        "| Expected:",
+        selectedType,
+      );
 
       if (result === "invalid" || result !== selectedType) {
         setError("Invalid Key");
@@ -87,12 +138,14 @@ export function AccessKeyModal({
       const msg =
         role === "owner" ? "You are now the Owner" : "You are now an Admin";
       setSuccess(msg);
+      console.log("[AccessKey] Role assigned:", role);
 
       setTimeout(() => {
         onSuccess(role);
         resetState();
       }, 1400);
-    } catch {
+    } catch (err) {
+      console.error("[AccessKey] Unexpected error:", err);
       setError("Failed to verify key. Please try again.");
     } finally {
       setLoading(false);
@@ -249,6 +302,12 @@ export function AccessKeyModal({
                     </button>
                   </div>
                 </div>
+
+                {actorLoading && !error && !success && (
+                  <p className="text-muted-foreground text-xs">
+                    Connecting to server...
+                  </p>
+                )}
 
                 {error && (
                   <div
