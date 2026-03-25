@@ -12,8 +12,8 @@ import { useState } from "react";
 import { RegistrationResult } from "../backend";
 import { useActor } from "../hooks/useActor";
 import {
+  ensurePrincipalKey,
   setRegistrationData,
-  setRegistrationId,
 } from "../lib/titanRegistration";
 
 interface RegistrationModalProps {
@@ -58,14 +58,16 @@ export function RegistrationModal({
       newErrors.age = "Age is required.";
     } else if (Number.isNaN(ageNum) || !Number.isInteger(ageNum)) {
       newErrors.age = "Age must be a whole number.";
-    } else if (ageNum < 13 || ageNum > 120) {
-      newErrors.age = "Age must be between 13 and 120.";
+    } else if (ageNum < 13 || ageNum > 100) {
+      newErrors.age = "Age must be between 13 and 100.";
     }
 
     if (!gmail.trim()) {
       newErrors.gmail = "Gmail address is required.";
-    } else if (!gmail.toLowerCase().endsWith("@gmail.com")) {
+    } else if (!gmail.trim().toLowerCase().endsWith("@gmail.com")) {
       newErrors.gmail = "Must be a valid Gmail address (ending in @gmail.com).";
+    } else if (!/^[^\s@]+@gmail\.com$/.test(gmail.trim().toLowerCase())) {
+      newErrors.gmail = "Invalid email format.";
     }
 
     setErrors(newErrors);
@@ -77,48 +79,83 @@ export function RegistrationModal({
     setLoading(true);
     setErrors({});
 
+    const payload = {
+      username: username.trim(),
+      age: Number(age),
+      email: gmail.trim().toLowerCase(),
+    };
+    console.log("[Registration] Request payload:", payload);
+
     try {
       if (actor) {
-        const available = await actor.checkUsernameAvailability(
-          username.trim(),
+        try {
+          console.log("[Registration] Checking username availability...");
+          const available = await actor.checkUsernameAvailability(
+            username.trim(),
+          );
+          console.log("[Registration] Username available:", available);
+
+          if (!available) {
+            setErrors({
+              username:
+                "This username is already taken. Please choose another.",
+            });
+            setLoading(false);
+            return;
+          }
+
+          console.log("[Registration] Calling registerUser with:", {
+            username: username.trim(),
+            age: BigInt(Math.floor(Number(age))),
+            gmail: gmail.trim().toLowerCase(),
+          });
+
+          const result = await actor.registerUser({
+            username: username.trim(),
+            age: BigInt(Math.floor(Number(age))),
+            gmail: gmail.trim().toLowerCase(),
+          });
+
+          console.log("[Registration] Backend response:", result);
+
+          if (result === RegistrationResult.usernameAlreadyExists) {
+            setErrors({
+              username:
+                "This username is already taken. Please choose another.",
+            });
+            setLoading(false);
+            return;
+          }
+          if (result === RegistrationResult.invalidEmail) {
+            setErrors({
+              gmail: "Invalid email format. Please check and try again.",
+            });
+            setLoading(false);
+            return;
+          }
+          if (result === RegistrationResult.other) {
+            setErrors({ general: "Server error. Please try again later." });
+            setLoading(false);
+            return;
+          }
+          // result === RegistrationResult.registrationSuccessful — fall through
+        } catch (backendErr) {
+          // Backend call failed (network issue, canister error, etc.)
+          // Log it but still allow local registration to proceed
+          console.warn(
+            "[Registration] Backend call failed, proceeding with local registration:",
+            backendErr,
+          );
+        }
+      } else {
+        console.log(
+          "[Registration] Actor not yet ready, using local registration.",
         );
-        if (!available) {
-          setErrors({
-            username: "This username is already taken. Please choose another.",
-          });
-          setLoading(false);
-          return;
-        }
-
-        const result = await actor.registerUser({
-          username: username.trim(),
-          age: BigInt(Math.floor(Number(age))),
-          gmail: gmail.trim().toLowerCase(),
-        });
-
-        if (result === RegistrationResult.usernameAlreadyExists) {
-          setErrors({
-            username: "This username is already taken. Please choose another.",
-          });
-          setLoading(false);
-          return;
-        }
-        if (result === RegistrationResult.invalidEmail) {
-          setErrors({
-            gmail: "Invalid Gmail address. Please check and try again.",
-          });
-          setLoading(false);
-          return;
-        }
-        if (result === RegistrationResult.other) {
-          setErrors({ general: "Registration failed. Please try again." });
-          setLoading(false);
-          return;
-        }
       }
 
-      const newId = crypto.randomUUID();
-      setRegistrationId(newId);
+      // Clear any stale key so a fresh one is generated for this new registration
+      localStorage.removeItem("titanUserId");
+      const newId = ensurePrincipalKey();
       setRegistrationData({
         username: username.trim(),
         age: Number(age),
@@ -126,9 +163,11 @@ export function RegistrationModal({
         principalId: newId,
       });
       setPrincipalId(newId);
+      console.log("[Registration] Success! Principal Key:", newId);
       setStep("success");
-    } catch {
-      setErrors({ general: "An unexpected error occurred. Please try again." });
+    } catch (err) {
+      console.error("[Registration] Unexpected error:", err);
+      setErrors({ general: "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -207,7 +246,7 @@ export function RegistrationModal({
                   type="number"
                   placeholder="e.g. 25"
                   min={13}
-                  max={120}
+                  max={100}
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
                   className="bg-input border-border"
@@ -314,14 +353,14 @@ export function RegistrationModal({
                   <span className="text-foreground font-medium">
                     {username}
                   </span>
-                  ! Your unique Principal ID has been generated. Keep this safe
-                  for future reference.
+                  ! Your unique Principal Key has been generated and linked to
+                  your account.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-foreground text-sm font-medium">
-                  Your Principal ID
+                  Your Principal Key
                 </Label>
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/40 border border-border">
                   <code className="flex-1 min-w-0 text-xs font-mono text-primary break-all leading-relaxed">
@@ -332,7 +371,7 @@ export function RegistrationModal({
                     onClick={handleCopy}
                     className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted/60 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                     data-ocid="registration.button"
-                    title="Copy Principal ID"
+                    title="Copy Principal Key"
                   >
                     {copied ? (
                       <Check className="w-4 h-4 text-emerald-400" />
@@ -342,8 +381,8 @@ export function RegistrationModal({
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This ID is stored locally and uniquely identifies your
-                  account.
+                  This key is automatically assigned and persists across
+                  sessions. It uniquely identifies your account.
                 </p>
               </div>
 

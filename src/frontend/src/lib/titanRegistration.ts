@@ -33,3 +33,22 @@ export function getRegistrationData(): RegistrationData | null {
     return null;
   }
 }
+
+export function ensurePrincipalKey(): string {
+  const existing = localStorage.getItem(REGISTRATION_KEY);
+  if (existing) return existing;
+  const newKey = crypto.randomUUID();
+  localStorage.setItem(REGISTRATION_KEY, newKey);
+  // Also update the stored registration data if it exists but lacks a key
+  const raw = localStorage.getItem(REGISTRATION_DATA_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw) as RegistrationData;
+      if (!data.principalId) {
+        data.principalId = newKey;
+        localStorage.setItem(REGISTRATION_DATA_KEY, JSON.stringify(data));
+      }
+    } catch {}
+  }
+  return newKey;
+}

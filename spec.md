@@ -1,32 +1,30 @@
 # Titan
 
 ## Current State
-New project with empty backend and no frontend.
+The app has a registration flow that generates a UUID as `principalId` and stores it in localStorage via `titanRegistration.ts`. However:
+- `ChatView` reads the user's identity from `useInternetIdentity()` which returns anonymous/undefined since II login is not used
+- There is no guarantee a returning user (who skips registration because `isRegistered()` is true) has a principalKey assigned and available in session context
+- Nothing ensures the principalKey is propagated to all actions
+- If localStorage is cleared, returning users get no principalKey regenerated
 
 ## Requested Changes (Diff)
 
 ### Add
-- Role-based access system with three roles: Owner, Admin, User
-- Owner passcode: owner342754; Admin passcode: admin24638
-- Posts system: Owner and Admin can create posts; all users can view
-- Post types: Important Update (highlighted/prioritized) and Daily Update
-- Comments on posts (all users can comment)
-- Chat/messaging between users
-- Home feed showing all posts, Important Updates prioritized
-- Role-based access panels (Owner/Admin controls)
-- User profiles
-- Search functionality for posts
+- `ensurePrincipalKey()` utility that always returns a valid UUID principalKey — retrieving from localStorage or generating+saving a new one if missing
+- A React context/hook `usePrincipalKey()` that provides the current user's principalKey across the whole app
+- Call `ensurePrincipalKey()` at app startup so every session always has a key
 
 ### Modify
-- N/A (new project)
+- `App.tsx` — call `ensurePrincipalKey()` on mount; pass the principalKey down or provide via context
+- `ChatView.tsx` — replace `identity?.getPrincipal().toString()` with the stored UUID principalKey from localStorage; show it as "Your Principal Key"
+- `titanRegistration.ts` — add `ensurePrincipalKey()` export
+- `RegistrationModal.tsx` — use `ensurePrincipalKey()` instead of raw `crypto.randomUUID()` so the key is always consistent
 
 ### Remove
-- N/A (new project)
+- The dependency on `useInternetIdentity` in `ChatView` for displaying the user's own principal (it showed anonymous ICP principal which is meaningless here)
 
 ## Implementation Plan
-1. Backend: user management with roles, posts (type: important/daily), comments, direct messages
-2. Frontend: dark-themed social media UI with feed, chat, profile, and role-based panels
-3. Role validation via passcode entry (stored/checked in backend)
-4. Feed prioritizes Important Updates at top with visual highlight
-5. Chat section for user-to-user messaging
-6. Post creation flow only accessible to Owner/Admin roles
+1. Add `ensurePrincipalKey()` to `titanRegistration.ts`
+2. Update `RegistrationModal.tsx` to use `ensurePrincipalKey()` instead of raw `crypto.randomUUID()`
+3. Update `App.tsx` to call `ensurePrincipalKey()` on mount
+4. Update `ChatView.tsx` to use `getRegistrationId()` / `ensurePrincipalKey()` for displaying the user's own key, removing the II identity dependency for this purpose

@@ -5,8 +5,8 @@ import { Principal } from "@icp-sdk/core/principal";
 import { ArrowLeft, Loader2, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useConversation, useSendMessage } from "../hooks/useQueries";
+import { ensurePrincipalKey } from "../lib/titanRegistration";
 import { formatRelativeTime, getInitials } from "../lib/titanUtils";
 
 export function ChatView() {
@@ -16,8 +16,7 @@ export function ChatView() {
   );
   const [messageText, setMessageText] = useState("");
   const [principalError, setPrincipalError] = useState("");
-  const { identity } = useInternetIdentity();
-  const myPrincipal = identity?.getPrincipal().toString();
+  const myPrincipal = ensurePrincipalKey();
 
   const { data: messages = [], isLoading } = useConversation(activePrincipal);
   const sendMessage = useSendMessage();
@@ -63,7 +62,7 @@ export function ChatView() {
                 Start a Conversation
               </h2>
               <p className="text-muted-foreground text-sm">
-                Enter a user&apos;s Principal ID to start chatting
+                Enter a user&apos;s Principal Key to start chatting
               </p>
             </div>
 
@@ -96,10 +95,8 @@ export function ChatView() {
 
             <div className="p-4 rounded-xl bg-muted/20 border border-border">
               <p className="text-xs text-muted-foreground text-center break-all">
-                Your Principal ID:{" "}
-                <span className="font-mono text-foreground">
-                  {myPrincipal || "Not logged in"}
-                </span>
+                Your Principal Key:{" "}
+                <span className="font-mono text-foreground">{myPrincipal}</span>
               </p>
             </div>
           </div>

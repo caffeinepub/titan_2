@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { Bell, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminPanel } from "./components/AdminPanel";
 import { ChatView } from "./components/ChatView";
 import { CreatePostModal } from "./components/CreatePostModal";
@@ -11,7 +11,7 @@ import { ProfileView } from "./components/ProfileView";
 import { RegistrationModal } from "./components/RegistrationModal";
 import { RoleModal } from "./components/RoleModal";
 import { Sidebar } from "./components/Sidebar";
-import { isRegistered } from "./lib/titanRegistration";
+import { ensurePrincipalKey, isRegistered } from "./lib/titanRegistration";
 import { type TitanRole, clearTitanRole } from "./lib/titanRole";
 
 type View = "feed" | "chat" | "profile" | "admin";
@@ -22,6 +22,10 @@ export default function App() {
   const [role, setRole] = useState<TitanRole>("user");
   const [activeView, setActiveView] = useState<View>("feed");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
+
+  useEffect(() => {
+    ensurePrincipalKey();
+  }, []);
 
   const handleRegistrationComplete = () => {
     setShowRegistration(false);
