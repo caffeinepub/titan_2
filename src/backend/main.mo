@@ -5,8 +5,6 @@ import Map "mo:core/Map";
 import Runtime "mo:core/Runtime";
 import Set "mo:core/Set";
 import Nat "mo:core/Nat";
-import Order "mo:core/Order";
-import Int "mo:core/Int";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
@@ -15,12 +13,6 @@ import AccessControl "authorization/access-control";
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
-
-  module Post {
-    public func compare(p1 : Post, p2 : Post) : Order.Order {
-      Int.compare(p2.timestamp, p1.timestamp);
-    };
-  };
 
   type PostType = { #important; #daily };
 
@@ -97,12 +89,12 @@ actor {
   let users = Map.empty<Nat, User>();
 
   // Access Key Verification (secure backend check)
-  // Keys are only stored server-side and never exposed to the frontend
   public func verifyAccessKey(key : Text) : async AccessKeyResult {
-    if (key == "titan2437") {
+    let trimmed = key.trim(#char ' ');
+    if (trimmed == "titan2437") {
       return #owner;
     };
-    if (key == "admin24517") {
+    if (trimmed == "admin24517") {
       return #admin;
     };
     #invalid;
@@ -116,7 +108,12 @@ actor {
     if (registration.username.size() == 0) {
       return #other;
     };
-    let usernameTaken = users.values().any(func(u) { u.username == registration.username });
+    var usernameTaken = false;
+    for (u in users.values()) {
+      if (u.username == registration.username) {
+        usernameTaken := true;
+      };
+    };
     if (usernameTaken) {
       return #usernameAlreadyExists;
     };
@@ -133,14 +130,20 @@ actor {
   };
 
   public query func checkUsernameAvailability(username : Text) : async Bool {
-    users.values().all(func(u) { u.username != username });
+    var available = true;
+    for (u in users.values()) {
+      if (u.username == username) {
+        available := false;
+      };
+    };
+    available;
   };
 
   public query func getUsers() : async [User] {
     users.values().toArray();
   };
 
-  // Post Management (no auth check - role gating is frontend passcode)
+  // Post Management
   public shared ({ caller }) func createPost(title : Text, content : Text, postType : PostType) : async Nat {
     if (title.size() == 0) Runtime.trap("Title cannot be empty");
     if (content.size() == 0) Runtime.trap("Content cannot be empty");
@@ -178,23 +181,29 @@ actor {
   };
 
   public query func getImportantPosts() : async [PostView] {
-    posts.values().map(archivePost).toArray().filter(func(p) {
-      switch (p.postType) { case (#important) true; case (#daily) false };
-    });
+    posts.values()
+      .filter(func(p : Post) : Bool {
+        switch (p.postType) { case (#important) true; case (_) false };
+      })
+      .map(archivePost)
+      .toArray();
   };
 
   public query func getPostsByUser(user : Principal) : async [PostView] {
-    posts.values().map(archivePost).toArray().filter(func(p) { p.author == user });
+    posts.values()
+      .filter(func(p : Post) : Bool { p.author == user })
+      .map(archivePost)
+      .toArray();
   };
 
-  public shared ({ caller }) func deletePost(postId : Nat) : async () {
+  public shared func deletePost(postId : Nat) : async () {
     switch (posts.get(postId)) {
       case (null) { Runtime.trap("Post not found") };
-      case (?post) { posts.remove(postId) };
+      case (?_) { posts.remove(postId) };
     };
   };
 
-  public shared ({ caller }) func updatePost(postId : Nat, title : Text, content : Text, postType : PostType) : async () {
+  public shared func updatePost(postId : Nat, title : Text, content : Text, postType : PostType) : async () {
     switch (posts.get(postId)) {
       case (null) { Runtime.trap("Post not found") };
       case (?post) {
@@ -207,9 +216,7 @@ actor {
     switch (posts.get(postId)) {
       case (null) { Runtime.trap("Post not found") };
       case (?post) {
-        let newLikes = Set.fromIter(post.likes.values());
-        newLikes.add(caller);
-        posts.add(postId, { post with likes = newLikes });
+        post.likes.add(caller);
       };
     };
   };
@@ -222,9 +229,12 @@ actor {
   };
 
   public query func searchPosts(keyword : Text) : async [PostView] {
-    posts.values().map(archivePost).toArray().filter(func(p) {
-      p.title.contains(#text keyword) or p.content.contains(#text keyword);
-    });
+    posts.values()
+      .filter(func(p : Post) : Bool {
+        p.title.contains(#text keyword) or p.content.contains(#text keyword);
+      })
+      .map(archivePost)
+      .toArray();
   };
 
   // Comments
@@ -240,17 +250,19 @@ actor {
   };
 
   public query func getComments(postId : Nat) : async [Comment] {
-    comments.values().toArray().filter(func(c) { c.postId == postId });
+    comments.values()
+      .filter(func(c : Comment) : Bool { c.postId == postId })
+      .toArray();
   };
 
-  public shared ({ caller }) func deleteComment(commentId : Nat) : async () {
+  public shared func deleteComment(commentId : Nat) : async () {
     switch (comments.get(commentId)) {
       case (null) { Runtime.trap("Comment not found") };
       case (?_) { comments.remove(commentId) };
     };
   };
 
-  public shared ({ caller }) func updateComment(commentId : Nat, content : Text) : async () {
+  public shared func updateComment(commentId : Nat, content : Text) : async () {
     switch (comments.get(commentId)) {
       case (null) { Runtime.trap("Comment not found") };
       case (?comment) {
@@ -268,12 +280,14 @@ actor {
   };
 
   public query ({ caller }) func getConversation(withUser : Principal) : async [Message] {
-    messages.values().toArray().filter(func(m) {
-      (m.sender == caller and m.recipient == withUser) or (m.sender == withUser and m.recipient == caller);
-    });
+    messages.values()
+      .filter(func(m : Message) : Bool {
+        (m.sender == caller and m.recipient == withUser) or (m.sender == withUser and m.recipient == caller);
+      })
+      .toArray();
   };
 
-  public shared ({ caller }) func deleteMessage(messageId : Nat) : async () {
+  public shared func deleteMessage(messageId : Nat) : async () {
     switch (messages.get(messageId)) {
       case (null) { Runtime.trap("Message not found") };
       case (?_) { messages.remove(messageId) };
@@ -303,6 +317,5 @@ actor {
       case (null) { Runtime.trap("Profile not found") };
     };
   };
-
 
 };

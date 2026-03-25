@@ -20,6 +20,7 @@ import {
   useComments,
   useDeletePost,
   useLikePost,
+  useUserProfile,
 } from "../hooks/useQueries";
 import { getTitanRole } from "../lib/titanRole";
 import { formatRelativeTime, getInitials } from "../lib/titanUtils";
@@ -34,11 +35,12 @@ export function PostCard({ post, index }: PostCardProps) {
   const [commentText, setCommentText] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isImportant = post.postType === PostType.important;
-  const authorStr = post.author.toString();
-  const shortAuthor = `${authorStr.slice(0, 5)}...${authorStr.slice(-3)}`;
 
   const currentRole = getTitanRole();
   const isOwner = currentRole === "owner";
+
+  const { data: authorProfile } = useUserProfile(post.author);
+  const displayName = authorProfile?.displayName || "User";
 
   const { data: comments = [], isLoading: commentsLoading } = useComments(
     post.id,
@@ -137,12 +139,20 @@ export function PostCard({ post, index }: PostCardProps) {
         <div className="p-4 sm:p-5">
           <div className="flex items-start justify-between mb-4 gap-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
-                {getInitials(shortAuthor)}
-              </div>
+              {authorProfile?.avatarUrl ? (
+                <img
+                  src={authorProfile.avatarUrl}
+                  alt={displayName}
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">
+                  {getInitials(displayName)}
+                </div>
+              )}
               <div className="min-w-0">
                 <span className="font-semibold text-foreground text-sm truncate block">
-                  {shortAuthor}
+                  {displayName}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {formatRelativeTime(post.timestamp)}

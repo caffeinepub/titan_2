@@ -138,7 +138,21 @@ export function RegistrationModal({
             setLoading(false);
             return;
           }
-          // result === RegistrationResult.registrationSuccessful — fall through
+          // result === RegistrationResult.registrationSuccessful
+          // Save username to backend user profile so posts can display it
+          try {
+            await actor.saveCallerUserProfile({
+              displayName: username.trim(),
+              bio: "",
+              avatarUrl: "",
+            });
+            console.log("[Registration] User profile saved to backend.");
+          } catch (profileErr) {
+            console.warn(
+              "[Registration] Failed to save user profile (non-blocking):",
+              profileErr,
+            );
+          }
         } catch (backendErr) {
           // Backend call failed (network issue, canister error, etc.)
           // Log it but still allow local registration to proceed

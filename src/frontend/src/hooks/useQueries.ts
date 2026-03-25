@@ -82,6 +82,19 @@ export function useCallerProfile() {
   });
 }
 
+export function useUserProfile(author: Principal | null) {
+  const { actor, isFetching } = useActor();
+  return useQuery<UserProfile | null>({
+    queryKey: ["userProfile", author?.toString()],
+    queryFn: async () => {
+      if (!actor || !author) return null;
+      return actor.getUserProfile(author);
+    },
+    enabled: !!actor && !isFetching && !!author,
+    staleTime: 60_000,
+  });
+}
+
 export function useIsAdmin() {
   const { actor, isFetching } = useActor();
   return useQuery<boolean>({
