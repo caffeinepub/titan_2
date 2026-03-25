@@ -8,11 +8,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Crown, Eye, EyeOff, Shield, User } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Crown,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Shield,
+  User,
+} from "lucide-react";
 import { useState } from "react";
 import { UserRole } from "../backend";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { verifyAccessKey } from "../lib/accessKey";
 import { type TitanRole, setTitanRole } from "../lib/titanRole";
 
 interface RoleModalProps {
@@ -20,14 +30,12 @@ interface RoleModalProps {
   onClose: (role: TitanRole) => void;
 }
 
-const OWNER_PASSCODE = "owner342754";
-const ADMIN_PASSCODE = "admin24638";
-
 export function RoleModal({ open, onClose }: RoleModalProps) {
   const [mode, setMode] = useState<"select" | "owner" | "admin">("select");
-  const [passcode, setPasscode] = useState("");
-  const [showPass, setShowPass] = useState(false);
+  const [accessKey, setAccessKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const { actor } = useActor();
   const { identity } = useInternetIdentity();
@@ -37,39 +45,50 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
     onClose("user");
   };
 
-  const handleUnlock = async () => {
+  const handleSubmit = async () => {
     setError("");
+    setSuccess("");
+    if (!accessKey.trim()) {
+      setError("Please enter an access key.");
+      return;
+    }
     setLoading(true);
     try {
-      const isOwner = mode === "owner" && passcode === OWNER_PASSCODE;
-      const isAdmin = mode === "admin" && passcode === ADMIN_PASSCODE;
+      const result = await verifyAccessKey(actor, accessKey);
 
-      if (!isOwner && !isAdmin) {
-        setError("Incorrect passcode. Please try again.");
+      if (result === "invalid") {
+        setError("Invalid Key");
         setLoading(false);
         return;
       }
 
-      const role: TitanRole = isOwner ? "owner" : "admin";
+      const role: TitanRole = result === "owner" ? "owner" : "admin";
       setTitanRole(role);
+      setSuccess(`Access granted as ${role === "owner" ? "Owner" : "Admin"}!`);
 
       if (actor && identity) {
         const principal = identity.getPrincipal();
         await actor.assignCallerUserRole(principal, UserRole.admin);
       }
 
-      onClose(role);
+      setTimeout(() => {
+        onClose(role);
+        setSuccess("");
+        setAccessKey("");
+        setMode("select");
+      }, 1200);
     } catch {
-      setError("Failed to assign role. Please try again.");
+      setError("Failed to verify key. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBack = () => {
+  const handleCancel = () => {
     setMode("select");
-    setPasscode("");
+    setAccessKey("");
     setError("");
+    setSuccess("");
   };
 
   return (
@@ -164,43 +183,44 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
         {(mode === "owner" || mode === "admin") && (
           <div className="space-y-4 mt-2">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border">
-              {mode === "owner" ? (
-                <Crown className="w-5 h-5 text-amber-400 flex-shrink-0" />
-              ) : (
-                <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-              )}
+              <KeyRound className="w-5 h-5 text-primary flex-shrink-0" />
               <div className="min-w-0">
-                <p className="font-semibold text-sm">
-                  {mode === "owner" ? "Owner" : "Admin"} Passcode
-                </p>
+                <p className="font-bold text-foreground">Enter Access Key</p>
                 <p className="text-xs text-muted-foreground">
-                  Enter your secure passcode to unlock
+                  Enter your secret key to gain{" "}
+                  {mode === "owner" ? "Owner" : "Admin"} access
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="passcode" className="text-foreground">
-                Passcode
+              <Label
+                htmlFor="role-access-key"
+                className="text-foreground font-medium"
+              >
+                Access Key
               </Label>
               <div className="relative">
                 <Input
-                  id="passcode"
-                  type={showPass ? "text" : "password"}
-                  placeholder="Enter passcode..."
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-                  className="bg-input border-border pr-10"
+                  id="role-access-key"
+                  type={showKey ? "text" : "password"}
+                  placeholder="Enter your secret key..."
+                  value={accessKey}
+                  onChange={(e) => {
+                    setAccessKey(e.target.value);
+                    setError("");
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  className="bg-input border-border pr-10 focus:ring-2 focus:ring-primary/40"
                   data-ocid="role.input"
                   autoFocus
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowKey(!showKey)}
                 >
-                  {showPass ? (
+                  {showKey ? (
                     <EyeOff className="w-4 h-4" />
                   ) : (
                     <Eye className="w-4 h-4" />
@@ -211,7 +231,7 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
 
             {error && (
               <div
-                className="flex items-center gap-2 text-destructive text-sm"
+                className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2"
                 data-ocid="role.error_state"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -219,22 +239,30 @@ export function RoleModal({ open, onClose }: RoleModalProps) {
               </div>
             )}
 
+            {success && (
+              <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                {success}
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 className="flex-1 border-border"
-                onClick={handleBack}
+                onClick={handleCancel}
+                disabled={loading}
                 data-ocid="role.cancel_button"
               >
-                Back
+                Cancel
               </Button>
               <Button
                 className="flex-1 bg-primary hover:bg-accent text-primary-foreground"
-                onClick={handleUnlock}
-                disabled={loading || !passcode}
+                onClick={handleSubmit}
+                disabled={loading || !accessKey.trim()}
                 data-ocid="role.submit_button"
               >
-                {loading ? "Verifying..." : "Unlock"}
+                {loading ? "Verifying..." : "Submit"}
               </Button>
             </div>
           </div>

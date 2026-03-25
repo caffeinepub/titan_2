@@ -1,4 +1,12 @@
-import { MessageCircle, Plus, Rss, Shield, User } from "lucide-react";
+import {
+  Crown,
+  Home,
+  KeyRound,
+  MessageCircle,
+  PenSquare,
+  Shield,
+  User,
+} from "lucide-react";
 import { type TitanRole, canPost } from "../lib/titanRole";
 
 type View = "feed" | "chat" | "profile" | "admin";
@@ -8,6 +16,7 @@ interface MobileNavProps {
   onNavigate: (view: View) => void;
   role: TitanRole;
   onCreatePost: () => void;
+  onBecomeAdmin?: () => void;
 }
 
 export function MobileNav({
@@ -15,70 +24,96 @@ export function MobileNav({
   onNavigate,
   role,
   onCreatePost,
+  onBecomeAdmin,
 }: MobileNavProps) {
-  const tabs = [
-    { id: "feed" as View, label: "Home", icon: Rss },
-    { id: "chat" as View, label: "Messages", icon: MessageCircle },
-  ];
-
-  const rightTabs = [
-    { id: "profile" as View, label: "Profile", icon: User },
-    ...(canPost(role)
-      ? [{ id: "admin" as View, label: "Admin", icon: Shield }]
-      : []),
-  ];
-
   return (
     <nav
-      className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-card/90 backdrop-blur-xl border border-border rounded-full px-2 sm:px-3 py-2 shadow-card max-w-[calc(100vw-1rem)] w-max"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border"
       aria-label="Mobile navigation"
-      data-ocid="mobile.tab"
     >
-      {tabs.map((tab) => (
+      <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
         <button
           type="button"
-          key={tab.id}
-          className={`flex flex-col items-center gap-0.5 px-2 sm:px-4 py-1.5 rounded-full transition-colors ${
-            activeView === tab.id
-              ? "bg-primary/20 text-primary"
-              : "text-muted-foreground hover:text-foreground"
+          className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors ${
+            activeView === "feed"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground"
           }`}
-          onClick={() => onNavigate(tab.id)}
-          data-ocid={`mobile.${tab.id}.link`}
+          onClick={() => onNavigate("feed")}
+          data-ocid="mobile_nav.feed.button"
         >
-          <tab.icon className="w-5 h-5" />
-          <span className="text-[10px] font-medium">{tab.label}</span>
+          <Home className="w-5 h-5" />
+          <span className="text-xs font-medium">Home</span>
         </button>
-      ))}
 
-      {canPost(role) && (
         <button
           type="button"
-          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-primary hover:bg-accent text-primary-foreground flex items-center justify-center mx-1 shadow-glow transition-colors"
-          onClick={onCreatePost}
-          data-ocid="mobile.open_modal_button"
-        >
-          <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-      )}
-      {!canPost(role) && <div className="w-6" />}
-
-      {rightTabs.map((tab) => (
-        <button
-          type="button"
-          key={tab.id}
-          className={`flex flex-col items-center gap-0.5 px-2 sm:px-4 py-1.5 rounded-full transition-colors ${
-            activeView === tab.id
-              ? "bg-primary/20 text-primary"
-              : "text-muted-foreground hover:text-foreground"
+          className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors ${
+            activeView === "chat"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground"
           }`}
-          onClick={() => onNavigate(tab.id)}
-          data-ocid={`mobile.${tab.id}.link`}
+          onClick={() => onNavigate("chat")}
+          data-ocid="mobile_nav.chat.button"
         >
-          <tab.icon className="w-5 h-5" />
-          <span className="text-[10px] font-medium">{tab.label}</span>
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-xs font-medium">Messages</span>
         </button>
-      ))}
+
+        {canPost(role) && (
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground"
+            onClick={onCreatePost}
+            data-ocid="mobile_nav.create.button"
+          >
+            <PenSquare className="w-5 h-5" />
+            <span className="text-xs font-medium">Post</span>
+          </button>
+        )}
+
+        {role === "user" && onBecomeAdmin && (
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-amber-400/80 hover:bg-amber-500/10 transition-colors"
+            onClick={onBecomeAdmin}
+            data-ocid="mobile_nav.become_admin.button"
+          >
+            <KeyRound className="w-5 h-5" />
+            <span className="text-xs font-medium">Access</span>
+          </button>
+        )}
+
+        {canPost(role) && (
+          <button
+            type="button"
+            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors ${
+              activeView === "admin"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground"
+            }`}
+            onClick={() => onNavigate("admin")}
+            data-ocid="mobile_nav.admin.button"
+          >
+            <Shield className="w-5 h-5" />
+            <span className="text-xs font-medium">Admin</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors ${
+            activeView === "profile"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground"
+          }`}
+          onClick={() => onNavigate("profile")}
+          data-ocid="mobile_nav.profile.button"
+        >
+          <User className="w-5 h-5" />
+          <span className="text-xs font-medium">Profile</span>
+        </button>
+      </div>
     </nav>
   );
 }

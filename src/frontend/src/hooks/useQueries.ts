@@ -103,6 +103,20 @@ export function useCreatePost() {
   });
 }
 
+export function useDeletePost() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId }: { postId: bigint }) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.deletePost(postId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+  });
+}
+
 export function useAddComment() {
   const { actor } = useActor();
   const queryClient = useQueryClient();

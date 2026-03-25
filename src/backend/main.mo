@@ -41,6 +41,12 @@ actor {
     #other;
   };
 
+  public type AccessKeyResult = {
+    #owner;
+    #admin;
+    #invalid;
+  };
+
   type Post = {
     id : Nat;
     title : Text;
@@ -89,6 +95,17 @@ actor {
   let messages = Map.empty<Nat, Message>();
   let profiles = Map.empty<Principal, UserProfile>();
   let users = Map.empty<Nat, User>();
+
+  // Access Key Verification (secure backend check)
+  public func verifyAccessKey(key : Text) : async AccessKeyResult {
+    if (key == "owner342754") {
+      return #owner;
+    };
+    if (key == "admin24638") {
+      return #admin;
+    };
+    #invalid;
+  };
 
   // Registration
   public shared func registerUser(registration : RegistrationData) : async RegistrationResult {

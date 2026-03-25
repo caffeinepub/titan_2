@@ -1,5 +1,6 @@
 import {
   Crown,
+  KeyRound,
   MessageCircle,
   RefreshCw,
   Rss,
@@ -20,6 +21,7 @@ interface SidebarProps {
   onNavigate: (view: View) => void;
   role: TitanRole;
   onResetRole: () => void;
+  onBecomeAdmin?: () => void;
 }
 
 const navItems = [
@@ -33,6 +35,7 @@ export function Sidebar({
   onNavigate,
   role,
   onResetRole,
+  onBecomeAdmin,
 }: SidebarProps) {
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-sidebar border-r border-sidebar-border fixed left-0 top-0 bottom-0 z-20">
@@ -83,6 +86,18 @@ export function Sidebar({
               className={`w-5 h-5 flex-shrink-0 ${activeView === "admin" ? "text-primary" : ""}`}
             />
             Admin Panel
+          </button>
+        )}
+
+        {role === "user" && onBecomeAdmin && (
+          <button
+            type="button"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-amber-400/80 hover:bg-amber-500/10 hover:text-amber-400 border border-amber-500/20 mt-2"
+            onClick={onBecomeAdmin}
+            data-ocid="sidebar.become_admin.button"
+          >
+            <KeyRound className="w-5 h-5 flex-shrink-0" />
+            Become Admin/Owner
           </button>
         )}
       </nav>

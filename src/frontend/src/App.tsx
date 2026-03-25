@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Bell, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { AccessKeyModal } from "./components/AccessKeyModal";
 import { AdminPanel } from "./components/AdminPanel";
 import { ChatView } from "./components/ChatView";
 import { CreatePostModal } from "./components/CreatePostModal";
@@ -11,20 +12,26 @@ import { ProfileView } from "./components/ProfileView";
 import { RegistrationModal } from "./components/RegistrationModal";
 import { RoleModal } from "./components/RoleModal";
 import { Sidebar } from "./components/Sidebar";
+import { SplashScreen } from "./components/SplashScreen";
 import { ensurePrincipalKey, isRegistered } from "./lib/titanRegistration";
 import { type TitanRole, clearTitanRole } from "./lib/titanRole";
 
 type View = "feed" | "chat" | "profile" | "admin";
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [showRegistration, setShowRegistration] = useState(!isRegistered());
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showAccessKeyModal, setShowAccessKeyModal] = useState(false);
   const [role, setRole] = useState<TitanRole>("user");
   const [activeView, setActiveView] = useState<View>("feed");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
 
   useEffect(() => {
-    ensurePrincipalKey();
+    Promise.all([
+      ensurePrincipalKey(),
+      new Promise<void>((r) => setTimeout(r, 2500)),
+    ]).then(() => setShowSplash(false));
   }, []);
 
   const handleRegistrationComplete = () => {
@@ -44,13 +51,21 @@ export default function App() {
     setShowRoleModal(true);
   };
 
+  const handleAccessKeySuccess = (newRole: TitanRole) => {
+    setRole(newRole);
+    setShowAccessKeyModal(false);
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-background flex">
+      <AnimatePresence>{showSplash && <SplashScreen />}</AnimatePresence>
+
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
         role={role}
         onResetRole={handleResetRole}
+        onBecomeAdmin={() => setShowAccessKeyModal(true)}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden md:ml-60">
@@ -138,6 +153,7 @@ export default function App() {
         onNavigate={setActiveView}
         role={role}
         onCreatePost={() => setMobileCreateOpen(true)}
+        onBecomeAdmin={() => setShowAccessKeyModal(true)}
       />
 
       <CreatePostModal
@@ -151,6 +167,12 @@ export default function App() {
       />
 
       <RoleModal open={showRoleModal} onClose={handleRoleSelected} />
+
+      <AccessKeyModal
+        open={showAccessKeyModal}
+        onClose={() => setShowAccessKeyModal(false)}
+        onSuccess={handleAccessKeySuccess}
+      />
 
       <Toaster theme="dark" richColors />
     </div>
