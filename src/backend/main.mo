@@ -97,11 +97,12 @@ actor {
   let users = Map.empty<Nat, User>();
 
   // Access Key Verification (secure backend check)
+  // Keys are only stored server-side and never exposed to the frontend
   public func verifyAccessKey(key : Text) : async AccessKeyResult {
-    if (key == "owner342754") {
+    if (key == "titan2437") {
       return #owner;
     };
-    if (key == "admin24638") {
+    if (key == "admin24517") {
       return #admin;
     };
     #invalid;
