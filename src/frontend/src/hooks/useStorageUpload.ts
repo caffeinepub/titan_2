@@ -63,11 +63,7 @@ export function useStorageUpload() {
         `[StorageUpload] Uploading ${file.name} (${file.type}, ${file.size} bytes)`,
       );
 
-      const { hash } = await storageClient.putFile(
-        bytes,
-        file.type,
-        onProgress,
-      );
+      const { hash } = await storageClient.putFile(bytes, onProgress);
       const url = await storageClient.getDirectURL(hash);
 
       console.log("[StorageUpload] Upload successful. URL:", url);

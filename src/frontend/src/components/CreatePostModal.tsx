@@ -41,18 +41,22 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const createPost = useCreatePost();
-  const backendStatus = useBackendStatus();
+  const {
+    data: backendOnline,
+    refetch: retryBackendCheck,
+    isFetching: isCheckingBackend,
+  } = useBackendStatus();
   const { uploadImage, isUploading, uploadError } = useStorageUpload();
 
-  const isBackendOffline = backendStatus.data === false;
+  const isBackendOffline = backendOnline === false;
   const isTemporarilyUnavailable =
     submitError?.includes("temporarily unavailable") ?? false;
 
   useEffect(() => {
-    if (backendStatus.data === true && isTemporarilyUnavailable) {
+    if (backendOnline === true && isTemporarilyUnavailable) {
       setSubmitError(null);
     }
-  }, [backendStatus.data, isTemporarilyUnavailable]);
+  }, [backendOnline, isTemporarilyUnavailable]);
 
   // Show upload error in the submit error area
   useEffect(() => {
@@ -172,8 +176,9 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
   };
 
   const isCountingDown = retryCountdown !== null;
+  // Submit is only disabled during active operations, not due to backend status
   const isSubmitDisabled =
-    createPost.isPending || isCountingDown || isBackendOffline || isUploading;
+    createPost.isPending || isCountingDown || isUploading;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -195,10 +200,23 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
               data-ocid="create_post.error_state"
             >
               <WifiOff className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-yellow-500">
-                Backend is currently unavailable. Post submission is disabled
-                until the server is back online.
+              <p className="text-sm text-yellow-500 flex-1">
+                Server is down, retrying...
               </p>
+              <button
+                type="button"
+                onClick={() => retryBackendCheck()}
+                disabled={isCheckingBackend}
+                className="flex items-center gap-1 text-xs text-yellow-500 hover:text-yellow-400 font-medium flex-shrink-0 disabled:opacity-50"
+                data-ocid="create_post.retry_button"
+              >
+                {isCheckingBackend ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+                Retry
+              </button>
             </div>
           )}
 
@@ -362,7 +380,7 @@ export function CreatePostModal({ open, onClose }: CreatePostModalProps) {
           )}
 
           {/* Error message with retry */}
-          {submitError && !isBackendOffline && (
+          {submitError && (
             <div
               className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/30"
               data-ocid="create_post.error_state"

@@ -353,7 +353,6 @@ interface UploadChunkParams {
   owner: string;
   projectId: string;
   httpHeaders: Headers;
-  contentType: string;
 }
 
 class StorageGatewayClient {
@@ -393,7 +392,7 @@ class StorageGatewayClient {
       const response = await fetch(url, {
         method: "PUT",
         headers: {
-          "Content-Type": params.contentType || "application/octet-stream",
+          "Content-Type": "application/octet-stream",
           "X-Caffeine-Project-ID": params.projectId,
         },
         body: params.chunkData as BodyInit,
@@ -401,9 +400,6 @@ class StorageGatewayClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
-          `[StorageClient] Chunk upload failed — status: ${response.status}, body: ${errorText}`,
-        );
         const error = new Error(
           `Failed to upload chunk ${params.chunkIndex}: ${response.status} ${response.statusText} - ${errorText}`,
         );
@@ -450,16 +446,6 @@ class StorageGatewayClient {
         },
       };
 
-      console.log("[StorageClient] uploadBlobTree request:", {
-        url,
-        bucketName,
-        numBlobBytes,
-        owner,
-        projectId,
-        headers: blobHashTree.headers,
-        certLength: certificateBytes.length,
-      });
-
       const response = await fetch(url, {
         method: "PUT",
         headers: {
@@ -471,9 +457,6 @@ class StorageGatewayClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
-          `[StorageClient] uploadBlobTree failed — status: ${response.status}, body: ${errorText}`,
-        );
         const error = new Error(
           `Failed to upload blob tree: ${response.status} ${response.statusText} - ${errorText}`,
         );
@@ -512,36 +495,21 @@ export class StorageClient {
     throw new Error("Expected v3 response body");
   }
 
-  /**
-   * Upload raw bytes to blob storage.
-   * @param blobBytes  - Raw file bytes
-   * @param contentType - MIME type of the file (e.g. "image/jpeg", "image/png")
-   * @param onProgress - Optional progress callback (0–100)
-   */
   public async putFile(
     blobBytes: Uint8Array,
-    contentType = "application/octet-stream",
     onProgress?: (percentage: number) => void,
   ): Promise<{ hash: string }> {
-    if (!blobBytes || blobBytes.length === 0) {
-      throw new Error("putFile: blobBytes must not be empty");
-    }
-
-    // Normalise content type — only accept image/jpeg or image/png for images
-    const resolvedContentType =
-      contentType === "image/jpg" ? "image/jpeg" : contentType;
-
-    // HTTP headers for fetch requests
+    // HTTP headers for fetch requests (used for the PUT request to gateway)
     const httpHeaders: Headers = {
-      "Content-Type": resolvedContentType,
+      "Content-Type": "application/json",
     };
-    // Create a Blob with the correct MIME type
+    // Create a Blob from the bytes
     const file = new Blob([new Uint8Array(blobBytes)], {
-      type: resolvedContentType,
+      type: "application/octet-stream",
     });
-    // File metadata headers stored with the blob tree
+    // File metadata headers that will be stored with the blob tree
     const fileHeaders: Headers = {
-      "Content-Type": resolvedContentType,
+      "Content-Type": "application/octet-stream",
       "Content-Length": file.size.toString(),
     };
 
@@ -565,7 +533,6 @@ export class StorageClient {
       chunkHashes,
       blobRootHash,
       httpHeaders,
-      resolvedContentType,
       onProgress,
     );
     return { hash: hashString };
@@ -603,7 +570,6 @@ export class StorageClient {
     chunkHashes: YHash[],
     blobRootHash: YHash,
     httpHeaders: Headers,
-    contentType: string,
     onProgress: ((percentage: number) => void) | undefined,
   ): Promise<void> {
     let completedChunks = 0;
@@ -619,7 +585,6 @@ export class StorageClient {
         owner: this.backendCanisterId,
         projectId: this.projectId,
         httpHeaders,
-        contentType,
       });
       // Use atomic increment to avoid race conditions
       const currentCompleted = ++completedChunks;

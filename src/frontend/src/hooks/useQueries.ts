@@ -100,14 +100,14 @@ export function useBackendStatus() {
   return useQuery<boolean>({
     queryKey: ["backendStatus"],
     queryFn: async () => {
-      if (!actor) return false;
+      if (!actor) return true; // actor not ready = still loading, not offline
       try {
-        await actor.getAllPosts();
+        await actor.getRecentPosts();
         return true;
       } catch (err) {
         console.error("[Titan Backend Health Check]", err);
         if (isCanisterStoppedError(err)) return false;
-        return true; // other errors don't mean canister is stopped
+        return true; // other errors are not definitive proof backend is down
       }
     },
     enabled: !!actor && !isFetching,
