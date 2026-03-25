@@ -21,6 +21,7 @@ import {
   useDeletePost,
   useLikePost,
 } from "../hooks/useQueries";
+import { extractPostImage } from "../lib/postImage";
 import { getTitanRole } from "../lib/titanRole";
 import { formatRelativeTime, getInitials } from "../lib/titanUtils";
 
@@ -39,6 +40,8 @@ export function PostCard({ post, index }: PostCardProps) {
 
   const currentRole = getTitanRole();
   const isOwner = currentRole === "owner";
+
+  const { imageUrl, cleanContent } = extractPostImage(post.content);
 
   const { data: comments = [], isLoading: commentsLoading } = useComments(
     post.id,
@@ -189,9 +192,21 @@ export function PostCard({ post, index }: PostCardProps) {
               {post.title}
             </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {post.content}
+              {cleanContent}
             </p>
           </div>
+
+          {/* Post image */}
+          {imageUrl && (
+            <div className="mb-4 -mx-1">
+              <img
+                src={imageUrl}
+                alt={post.title}
+                className="w-full rounded-xl object-cover max-h-80"
+                loading="lazy"
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-1 pt-3 border-t border-border/50 flex-wrap">
             <button

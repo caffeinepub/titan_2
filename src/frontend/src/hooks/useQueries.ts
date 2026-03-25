@@ -7,7 +7,17 @@ import type {
   PostView,
   UserProfile,
 } from "../backend";
+import { embedPostImage } from "../lib/postImage";
 import { useActor } from "./useActor";
+
+function isCanisterStoppedError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes("IC0508") ||
+    msg.toLowerCase().includes("canister is stopped") ||
+    msg.toLowerCase().includes("canister stopped")
+  );
+}
 
 export function useAllPosts() {
   const { actor, isFetching } = useActor();
@@ -85,6 +95,27 @@ export function useIsAdmin() {
   });
 }
 
+export function useBackendStatus() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["backendStatus"],
+    queryFn: async () => {
+      if (!actor) return false;
+      try {
+        await actor.getAllPosts();
+        return true;
+      } catch (err) {
+        console.error("[Titan Backend Health Check]", err);
+        if (isCanisterStoppedError(err)) return false;
+        return true; // other errors don't mean canister is stopped
+      }
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 10000,
+    retry: false,
+  });
+}
+
 export function useCreatePost() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -93,10 +124,31 @@ export function useCreatePost() {
       title,
       content,
       postType,
-    }: { title: string; content: string; postType: PostType }) => {
+      imageUrl,
+    }: {
+      title: string;
+      content: string;
+      postType: PostType;
+      imageUrl?: string | null;
+    }) => {
       if (!actor) throw new Error("Not connected");
-      return actor.createPost(title, content, postType);
+      const finalContent = imageUrl
+        ? embedPostImage(content, imageUrl)
+        : content;
+      try {
+        return await actor.createPost(title, finalContent, postType);
+      } catch (err) {
+        console.error("[Titan Backend Error]", err);
+        if (isCanisterStoppedError(err)) {
+          throw new Error(
+            "Server is temporarily unavailable. Please try again later.",
+          );
+        }
+        throw err;
+      }
     },
+    retry: 2,
+    retryDelay: (attempt) => attempt * 2000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
