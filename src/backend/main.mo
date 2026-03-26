@@ -87,6 +87,8 @@ actor {
   let messages = Map.empty<Nat, Message>();
   let profiles = Map.empty<Principal, UserProfile>();
   let users = Map.empty<Nat, User>();
+  // Stores the role label ("owner", "admin") for principals that have elevated roles
+  let roleLabels = Map.empty<Principal, Text>();
 
   // Access Key Verification (secure backend check)
   public func verifyAccessKey(key : Text) : async AccessKeyResult {
@@ -98,6 +100,22 @@ actor {
       return #admin;
     };
     #invalid;
+  };
+
+  // Role label storage - called after successful key validation
+  public shared ({ caller }) func saveCallerRoleLabel(role : Text) : async () {
+    if (role == "owner" or role == "admin") {
+      roleLabels.add(caller, role);
+    } else {
+      roleLabels.remove(caller);
+    };
+  };
+
+  public query func getUserRoleLabel(user : Principal) : async Text {
+    switch (roleLabels.get(user)) {
+      case (?roleText) { roleText };
+      case (null) { "user" };
+    };
   };
 
   // Registration

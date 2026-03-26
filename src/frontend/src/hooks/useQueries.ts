@@ -18,6 +18,11 @@ function isCanisterStoppedError(err: unknown): boolean {
   );
 }
 
+type ActorWithRoles = {
+  saveCallerRoleLabel: (role: string) => Promise<void>;
+  getUserRoleLabel: (user: Principal) => Promise<string>;
+};
+
 export function useAllPosts() {
   const { actor, isFetching } = useActor();
   return useQuery<PostView[]>({
@@ -92,6 +97,25 @@ export function useUserProfile(author: Principal | null) {
     },
     enabled: !!actor && !isFetching && !!author,
     staleTime: 60_000,
+  });
+}
+
+export function useUserRoleLabel(author: Principal | null) {
+  const { actor, isFetching } = useActor();
+  return useQuery<string>({
+    queryKey: ["userRoleLabel", author?.toString()],
+    queryFn: async () => {
+      if (!actor || !author) return "user";
+      try {
+        return await (actor as unknown as ActorWithRoles).getUserRoleLabel(
+          author,
+        );
+      } catch {
+        return "user";
+      }
+    },
+    enabled: !!actor && !isFetching && !!author,
+    staleTime: 30_000,
   });
 }
 
@@ -242,6 +266,24 @@ export function useUpdateProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["callerProfile"] });
+    },
+  });
+}
+
+export function useSaveRoleLabel() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ role }: { role: string }) => {
+      if (!actor) return;
+      try {
+        await (actor as unknown as ActorWithRoles).saveCallerRoleLabel(role);
+      } catch (err) {
+        console.warn("[RoleLabel] Failed to save role to backend:", err);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userRoleLabel"] });
     },
   });
 }

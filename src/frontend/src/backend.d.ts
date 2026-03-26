@@ -91,6 +91,8 @@ export declare const createActor: () => {
     saveCallerUserProfile: (profile: UserProfile) => Promise<void>;
     updateProfile: (displayName: string, bio: string, avatarUrl: string) => Promise<void>;
     getProfileId: (user: Principal) => Promise<UserProfile>;
+    saveCallerRoleLabel: (role: string) => Promise<void>;
+    getUserRoleLabel: (user: Principal) => Promise<string>;
 };
 export declare const UserRole: { readonly owner: "owner"; readonly admin: "admin"; readonly user: "user" };
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];

@@ -19,6 +19,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useActor } from "../hooks/useActor";
+import { useSaveRoleLabel } from "../hooks/useQueries";
 import { type TitanRole, setTitanRole } from "../lib/titanRole";
 
 type KeyType = "admin" | "owner" | null;
@@ -44,6 +45,7 @@ export function AccessKeyModal({
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const { actor, isFetching: actorLoading } = useActor();
+  const saveRoleLabel = useSaveRoleLabel();
 
   const resetState = () => {
     setSelectedType(null);
@@ -135,6 +137,10 @@ export function AccessKeyModal({
 
       const role: TitanRole = result;
       setTitanRole(role);
+
+      // Persist role to backend so other users can see it on posts
+      saveRoleLabel.mutate({ role });
+
       const msg =
         role === "owner" ? "You are now the Owner" : "You are now an Admin";
       setSuccess(msg);

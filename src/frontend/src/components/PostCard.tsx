@@ -5,10 +5,12 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Crown,
   Heart,
   MessageCircle,
   Send,
   Share2,
+  Shield,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
@@ -21,6 +23,7 @@ import {
   useDeletePost,
   useLikePost,
   useUserProfile,
+  useUserRoleLabel,
 } from "../hooks/useQueries";
 import { getTitanRole } from "../lib/titanRole";
 import { formatRelativeTime, getInitials } from "../lib/titanUtils";
@@ -28,6 +31,26 @@ import { formatRelativeTime, getInitials } from "../lib/titanUtils";
 interface PostCardProps {
   post: PostView;
   index: number;
+}
+
+function RoleBadge({ role }: { role: string }) {
+  if (role === "owner") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+        <Crown className="w-2.5 h-2.5" />
+        Owner
+      </span>
+    );
+  }
+  if (role === "admin") {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+        <Shield className="w-2.5 h-2.5" />
+        Admin
+      </span>
+    );
+  }
+  return null;
 }
 
 export function PostCard({ post, index }: PostCardProps) {
@@ -40,6 +63,7 @@ export function PostCard({ post, index }: PostCardProps) {
   const isOwner = currentRole === "owner";
 
   const { data: authorProfile } = useUserProfile(post.author);
+  const { data: authorRoleLabel = "user" } = useUserRoleLabel(post.author);
   const displayName = authorProfile?.displayName || "User";
 
   const { data: comments = [], isLoading: commentsLoading } = useComments(
@@ -151,9 +175,12 @@ export function PostCard({ post, index }: PostCardProps) {
                 </div>
               )}
               <div className="min-w-0">
-                <span className="font-semibold text-foreground text-sm truncate block">
-                  {displayName}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-semibold text-foreground text-sm truncate">
+                    {displayName}
+                  </span>
+                  <RoleBadge role={authorRoleLabel} />
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {formatRelativeTime(post.timestamp)}
                 </span>
