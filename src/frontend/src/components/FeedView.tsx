@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Plus, RefreshCw, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PostType } from "../backend";
@@ -21,6 +22,7 @@ export function FeedView({ role }: FeedViewProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -49,6 +51,11 @@ export function FeedView({ role }: FeedViewProps) {
   const dailyPosts = filteredPosts.filter((p) => p.postType === PostType.daily);
   const loading = isLoading || searchLoading;
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["userRoleLabel"] });
+    refetch();
+  };
+
   return (
     <div className="max-w-2xl mx-auto w-full" data-ocid="feed.section">
       {/* Header row — wraps on small screens */}
@@ -70,7 +77,7 @@ export function FeedView({ role }: FeedViewProps) {
             size="sm"
             variant="outline"
             className="border-border text-muted-foreground hover:text-foreground flex-shrink-0"
-            onClick={() => refetch()}
+            onClick={handleRefresh}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </Button>

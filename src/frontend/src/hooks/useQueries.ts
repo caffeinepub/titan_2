@@ -115,7 +115,7 @@ export function useUserRoleLabel(author: Principal | null) {
       }
     },
     enabled: !!actor && !isFetching && !!author,
-    staleTime: 30_000,
+    refetchInterval: 10000,
   });
 }
 
@@ -182,6 +182,7 @@ export function useCreatePost() {
     retryDelay: (attempt) => attempt * 2000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["userRoleLabel"] });
     },
   });
 }
@@ -196,6 +197,7 @@ export function useDeletePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["userRoleLabel"] });
     },
   });
 }
@@ -229,6 +231,7 @@ export function useLikePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["userRoleLabel"] });
     },
   });
 }
